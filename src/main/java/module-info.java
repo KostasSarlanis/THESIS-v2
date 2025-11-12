@@ -11,6 +11,6 @@ module com.example.thesisv2 {
     requires eu.hansolo.tilesfx;
     requires com.almasb.fxgl.all;
 
-    opens com.example.thesisv2 to javafx.fxml;
-    exports com.example.thesisv2;
+    opens com.thesisv2 to javafx.fxml;
+    exports com.thesisv2;
 }
