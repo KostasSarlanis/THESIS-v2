@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.Menu?>
+<?import javafx.scene.control.MenuBar?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Text?>
+
+<BorderPane xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.thesisv2.Controller">
+   <top>
+      <VBox fx:id="TopBar" BorderPane.alignment="CENTER">
+         <children>
+            <MenuBar fx:id="MainMenuBar" style="-fx-background-color: #ffffff;" VBox.vgrow="ALWAYS">
+              <menus>
+                <Menu fx:id="FileMenu" mnemonicParsing="false" text="Αρχείο">
+                  <items>
+                    <MenuItem mnemonicParsing="false" text="Close" />
+                  </items>
+                </Menu>
+                <Menu fx:id="EditMenu" mnemonicParsing="false" text="Επεξεργασία">
+                  <items>
+                    <MenuItem fx:id="EditDelete" mnemonicParsing="false" text="Διαγραφή" />
+                        <MenuItem fx:id="EditDuplicate" mnemonicParsing="false" text="Κλωνοποίηση" />
+                        <MenuItem fx:id="EditNew" mnemonicParsing="false" text="Καταχώριση" />
+                        <MenuItem fx:id="EditEdit" mnemonicParsing="false" text="Επεξεργασία" />
+                        <MenuItem fx:id="EditMassNew" mnemonicParsing="false" text="Μαζική καταχώριση" />
+                        <MenuItem fx:id="EditMassEdit" mnemonicParsing="false" text="Μαζική επεξεργασία" />
+                  </items>
+                </Menu>
+                  <Menu fx:id="SettingsMenu" mnemonicParsing="false" text="Ρυθμίσεις">
+                    <items>
+                      <MenuItem mnemonicParsing="false" text="Settings" />
+                    </items>
+                  </Menu>
+                <Menu fx:id="HelpMenu" mnemonicParsing="false" text="Help" />
+                  <Menu fx:id="AboutMenu" mnemonicParsing="false" text="About" />
+              </menus>
+               <VBox.margin>
+                  <Insets />
+               </VBox.margin>
+            </MenuBar>
+            <MenuBar fx:id="SecondMenuBar" style="-fx-background-color: #eeeeee;" VBox.vgrow="ALWAYS">
+              <menus>
+                <Menu fx:id="ListaEidon" mnemonicParsing="false" text="Λίστα ειδών" />
+                <Menu fx:id="ListaApothikon" mnemonicParsing="false" text="Λίστα αποθηκών" />
+                <Menu fx:id="EkdosiParastatikou" mnemonicParsing="false" text="Έκδοση παραστατικού" />
+                  <Menu fx:id="Endodiakinisi" mnemonicParsing="false" text="Ενδοδιακίνηση" />
+                  <Menu fx:id="ListaKiniseon" mnemonicParsing="false" text="Λίστα κινήσεων" />
+                  <Menu fx:id="ListaParastatikon" mnemonicParsing="false" text="Λίστα παραστατικών" />
+              </menus>
+            </MenuBar>
+         </children>
+      </VBox>
+   </top>
+   <left>
+      <VBox fx:id="SideBar" BorderPane.alignment="CENTER" />
+   </left>
+   <bottom>
+      <HBox alignment="BOTTOM_LEFT" prefWidth="1280.0" BorderPane.alignment="CENTER">
+         <children>
+            <Text strokeType="OUTSIDE" strokeWidth="0.0" text="TEST" />
+            <Region HBox.hgrow="ALWAYS" />
+            <Text strokeType="OUTSIDE" strokeWidth="0.0" text="MORE TEST" />
+         </children>
+      </HBox>
+   </bottom>
+   <center>
+      <SplitPane dividerPositions="0.095" BorderPane.alignment="CENTER">
+        <items>
+            <ListView minWidth="100.0" />
+          <AnchorPane style="-fx-background-color: #cccccc;" />
+        </items>
+      </SplitPane>
+   </center>
+</BorderPane>
