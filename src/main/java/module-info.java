@@ -10,6 +10,8 @@ module com.example.thesisv2 {
     requires org.kordamp.bootstrapfx.core;
     requires eu.hansolo.tilesfx;
     requires com.almasb.fxgl.all;
+    requires java.sql;
+    requires jdk.jdi;
 
     opens com.thesisv2 to javafx.fxml;
     exports com.thesisv2;

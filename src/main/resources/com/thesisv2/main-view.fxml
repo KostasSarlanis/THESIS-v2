@@ -78,54 +78,54 @@
         <items>
             <VBox prefHeight="600.0" style="-fx-background-color: #eeeeee;">
                <children>
-                  <Label text="Label">
+                  <Label text="Κωδικός">
                      <VBox.margin>
                         <Insets top="20.0" />
                      </VBox.margin>
                   </Label>
-                  <TextField>
+                  <TextField fx:id="SearchCode">
                      <VBox.margin>
                         <Insets />
                      </VBox.margin>
                   </TextField>
-                  <Label text="Label">
+                  <Label text="Περιγραφή">
                      <VBox.margin>
                         <Insets top="20.0" />
                      </VBox.margin>
                   </Label>
-                  <TextField />
-                  <Label text="Label">
+                  <TextField fx:id="SearchDescription" />
+                  <Label text="Αποθήκη">
                      <VBox.margin>
                         <Insets top="20.0" />
                      </VBox.margin>
                   </Label>
-                  <TextField />
-                  <Label text="Label">
+                  <TextField fx:id="SearchWarehouse" />
+                  <Label text="Τεμάχια">
                      <VBox.margin>
                         <Insets top="20.0" />
                      </VBox.margin>
                   </Label>
-                  <TextField />
-                  <Label text="Label">
+                  <TextField fx:id="SearchStock" />
+                  <Label text="Εναλλακτικός">
                      <VBox.margin>
                         <Insets top="20.0" />
                      </VBox.margin>
                   </Label>
-                  <TextField />
+                  <TextField fx:id="SearchAll" />
                </children>
             </VBox>
-            <TableView>
+            <TableView fx:id="ProductTableView">
               <columns>
-                <TableColumn prefWidth="82.0" text="Κωδικός" />
-                <TableColumn prefWidth="134.0" text="Περιγραφή" />
-                  <TableColumn prefWidth="64.0" text="Αποθήκη" />
-                  <TableColumn prefWidth="91.0" text="Τιμή αγωράς" />
-                  <TableColumn prefWidth="92.0" text="Τιμή λιανικής" />
-                  <TableColumn prefWidth="97.0" text="Τιμή χονδρικής" />
-                  <TableColumn minWidth="0.0" prefWidth="73.0" text="Απόθεμα" />
-                  <TableColumn prefWidth="110.0" text="Παλέτες ατόφιες" />
-                  <TableColumn prefWidth="126.0" text="Τεμ. εκτώς παλέτας" />
-                  <TableColumn prefWidth="107.0" text="Τεμ. ανα παλέτα" />
+                <TableColumn fx:id="ColumnProductID" prefWidth="82.0" text="Κωδικός" />
+                <TableColumn fx:id="ColumnProductDescription" prefWidth="134.0" text="Περιγραφή" />
+                  <TableColumn fx:id="ColumnWarehouses" prefWidth="64.0" text="Αποθήκες" />
+                  <TableColumn fx:id="ColumnPurchasePrice" prefWidth="91.0" text="Τιμή αγωράς" />
+                  <TableColumn fx:id="ColumnSellPrice" prefWidth="92.0" text="Τιμή λιανικής" />
+                  <TableColumn fx:id="ColumnWholesalePrice" prefWidth="97.0" text="Τιμή χονδρικής" />
+                  <TableColumn fx:id="CollumnStock" minWidth="0.0" prefWidth="73.0" text="Απόθεμα" />
+                  <TableColumn fx:id="ColumnPallets" prefWidth="110.0" text="Παλέτες ατόφιες" />
+                  <TableColumn fx:id="ColumnOutofpallet" prefWidth="126.0" text="Τεμ. εκτώς παλέτας" />
+                  <TableColumn fx:id="ColumnPalletsize" prefWidth="107.0" text="Τεμ. ανα παλέτα" />
               </columns>
             </TableView>
         </items>
