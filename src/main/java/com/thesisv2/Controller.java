@@ -125,7 +125,6 @@ public abstract class Controller implements Initializable {
             e.printStackTrace();
         }
 
-
     }
 
 }
