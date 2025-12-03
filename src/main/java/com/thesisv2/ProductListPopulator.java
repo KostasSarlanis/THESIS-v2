@@ -4,10 +4,10 @@ public class ProductListPopulator {
     //naming the variables we need
     Integer ProductID, TotalStock, TotalPallets, OutOfPallet, PalletSize;
     String ProductDescription, Warehouses;
-    Float PurchasePrice, SellPrice, WholesalePrice;
+    Float PurchasedPrice, SellPrice, WholesalePrice;
 
     //make the objects
-    public ProductListPopulator(Integer productID, String productDescription, String warehouses, Float purchasePrice,
+    public ProductListPopulator(Integer productID, String productDescription, String warehouses, Float purchasedPrice,
                                 Float sellPrice, Float wholesalePrice, Integer totalStock, Integer totalPallets,
                                 Integer outOfPallet, Integer palletSize) {
 
@@ -19,7 +19,7 @@ public class ProductListPopulator {
         PalletSize = palletSize;
         ProductDescription = productDescription;
         Warehouses = warehouses;
-        PurchasePrice = purchasePrice;
+        PurchasedPrice = purchasedPrice;
         SellPrice = sellPrice;
         WholesalePrice = wholesalePrice;
     }
@@ -56,8 +56,8 @@ public class ProductListPopulator {
         Warehouses = warehouses;
     }
 
-    public void setPurchasePrice(Float purchasePrice) {
-        PurchasePrice = purchasePrice;
+    public void setPurchasedPrice(Float purchasedPrice) {
+        PurchasedPrice = purchasedPrice;
     }
 
     public void setSellPrice(Float sellPrice) {
@@ -100,8 +100,8 @@ public class ProductListPopulator {
         return Warehouses;
     }
 
-    public Float getPurchasePrice() {
-        return PurchasePrice;
+    public Float getPurchasedPrice() {
+        return PurchasedPrice;
     }
 
     public Float getSellPrice() {

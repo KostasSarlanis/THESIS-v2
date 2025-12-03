@@ -21,7 +21,7 @@ import java.util.logging.Logger;
 import java.sql.Connection;
 
 
-public abstract class Controller implements Initializable {
+public class Controller implements Initializable {
 
     //setting up the columns
     @FXML
@@ -40,7 +40,7 @@ public abstract class Controller implements Initializable {
     @FXML
     private  TableColumn<ProductListPopulator, Float> ColumnWholesalePrice;
     @FXML
-    private  TableColumn<ProductListPopulator, Integer> CollumnStock;
+    private  TableColumn<ProductListPopulator, Integer> ColumnStock;
     @FXML
     private  TableColumn<ProductListPopulator, Integer> ColumnPallets;
     @FXML
@@ -109,10 +109,10 @@ public abstract class Controller implements Initializable {
             ColumnProductID.setCellValueFactory(new PropertyValueFactory<>("ProductID"));
             ColumnProductDescription.setCellValueFactory(new PropertyValueFactory<>("ProductDescription"));
             ColumnWarehouses.setCellValueFactory(new PropertyValueFactory<>("Warehouses"));
-            ColumnPurchasePrice.setCellValueFactory(new PropertyValueFactory<>("ProductPrice"));
+            ColumnPurchasePrice.setCellValueFactory(new PropertyValueFactory<>("PurchasedPrice"));
             ColumnSellPrice.setCellValueFactory(new PropertyValueFactory<>("SellPrice"));
-            ColumnWholesalePrice.setCellValueFactory(new PropertyValueFactory<>("PWholesalePrice"));
-            CollumnStock.setCellValueFactory(new PropertyValueFactory<>("TotalStock"));
+            ColumnWholesalePrice.setCellValueFactory(new PropertyValueFactory<>("WholesalePrice"));
+            ColumnStock.setCellValueFactory(new PropertyValueFactory<>("TotalStock"));
             ColumnPallets.setCellValueFactory(new PropertyValueFactory<>("TotalPallets"));
             ColumnOutofpallet.setCellValueFactory(new PropertyValueFactory<>("OutOfPallet"));
             ColumnPalletsize.setCellValueFactory(new PropertyValueFactory<>("PalletSize"));
@@ -120,7 +120,7 @@ public abstract class Controller implements Initializable {
             ProductTableView.setItems(ProductListPopulatorObservableList);
 
         } catch (SQLException e) {
-            System.out.println("error!!!!!!!!!!!!");
+            System.out.println("Error in getting data and setting the table.");
             Logger.getLogger(ProductListPopulator.class.getName()).log(Level.SEVERE, null, e);
             e.printStackTrace();
         }
