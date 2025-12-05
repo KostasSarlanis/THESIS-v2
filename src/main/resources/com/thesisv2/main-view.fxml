@@ -74,7 +74,7 @@
       </HBox>
    </bottom>
    <center>
-      <SplitPane dividerPositions="0.15" BorderPane.alignment="CENTER">
+      <SplitPane dividerPositions="0.1" BorderPane.alignment="CENTER">
         <items>
             <VBox prefHeight="600.0" style="-fx-background-color: #eeeeee;">
                <children>

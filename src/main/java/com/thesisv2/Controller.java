@@ -3,11 +3,14 @@ package com.thesisv2;
 import com.sun.jdi.FloatValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
+import javafx.collections.transformation.SortedList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
 
 import java.net.URL;
@@ -47,6 +50,8 @@ public class Controller implements Initializable {
     private  TableColumn<ProductListPopulator, Integer> ColumnOutofpallet;
     @FXML
     private TableColumn<ProductListPopulator, Integer> ColumnPalletsize;
+    @FXML
+    private TextField SearchDescription;
 
     ObservableList<ProductListPopulator> ProductListPopulatorObservableList = FXCollections.observableArrayList();
 
@@ -118,6 +123,25 @@ public class Controller implements Initializable {
             ColumnPalletsize.setCellValueFactory(new PropertyValueFactory<>("PalletSize"));
 
             ProductTableView.setItems(ProductListPopulatorObservableList);
+
+            //adding description filter
+            FilteredList<ProductListPopulator> filteredData = new FilteredList<>(ProductListPopulatorObservableList, b -> true);
+            SearchDescription.textProperty().addListener((observable, oldValue, newValue) -> {
+                filteredData.setPredicate(ProductListPopulator -> {
+
+                    //if no search value then display all records or whatever records it current have no chacges
+                    if (newValue.isBlank()) { return true; }
+                    String searchKeyword = newValue.toUpperCase();
+                    if (ProductListPopulator.getProductDescription().toUpperCase().contains(searchKeyword)) { return true; }
+                    else return false;
+                });
+            });
+
+            SortedList<ProductListPopulator> sortedData = new SortedList<>(filteredData);
+            //bind sorted result with table view
+            sortedData.comparatorProperty().bind(ProductTableView.comparatorProperty());
+            //applying filtered and sorted data to the table view
+            ProductTableView.setItems(sortedData);
 
         } catch (SQLException e) {
             System.out.println("Error in getting data and setting the table.");
