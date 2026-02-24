@@ -1,13 +1,11 @@
 package com.thesisv2;
 
-import com.sun.jdi.FloatValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
@@ -21,12 +19,11 @@ import java.sql.Statement;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.sql.Connection;
 
 
 public class Controller implements Initializable {
 
-    //setting up the columns
+    //~~~setting up the columns~~~
     @FXML
     private TableView<ProductListPopulator> ProductTableView;
 
@@ -52,6 +49,14 @@ public class Controller implements Initializable {
     private TableColumn<ProductListPopulator, Integer> ColumnPalletsize;
     @FXML
     private TextField SearchDescription;
+    @FXML
+    private TextField SearchAll;
+    @FXML
+    private TextField SearchCode;
+    @FXML
+    private TextField SearchWarehouse;
+    @FXML
+    private TextField SearchStock;
 
     ObservableList<ProductListPopulator> ProductListPopulatorObservableList = FXCollections.observableArrayList();
 
@@ -60,7 +65,7 @@ public class Controller implements Initializable {
         DBConnection connect = new DBConnection();
         Connection connection = connect.getConnection();
 
-        //setting up a var. with the query
+        //~~~setting up a var. with the query~~~
         String productViewQuery = "SELECT\n" +
                 "    p.ProductID,\n" +
                 "    p.ProductDescription,\n" +
@@ -87,11 +92,13 @@ public class Controller implements Initializable {
                 "    FROM prod_warehouse_link\n" +
                 "    GROUP BY PRODUCT\n" +
                 ") t ON t.PRODUCT = p.ProductID;";
+
+
         try{
             Statement statment = connect.connection.createStatement();
             ResultSet queryOutput = statment.executeQuery(productViewQuery);
 
-            //reads every line from the DB
+            //~~~reads every line from the DB~~~
             while (queryOutput.next()){
                 Integer queryProductID = queryOutput.getInt("ProductID");
                 String queryProductDescription = queryOutput.getString("ProductDescription");
@@ -104,13 +111,13 @@ public class Controller implements Initializable {
                 Integer queryOutOfPallet = queryOutput.getInt("OutOfPallet");
                 Integer queryPalletSize = queryOutput.getInt("PalletSize");
 
-                //Populating the observable list
+                //~~~Populating the observable list~~~
                 ProductListPopulatorObservableList.add(new ProductListPopulator(queryProductID, queryProductDescription, queryWarehouses,
                         queryPurchasedPrice, querySellPrice, queryWholesalePrice, queryTotalStock,
                         queryTotalPallets, queryOutOfPallet, queryPalletSize));
             }
 
-            //PropertyValueFactory corresponds to the new ProducListPopulator fields
+            //~~~PropertyValueFactory corresponds to the new ProducListPopulator fields~~~
             ColumnProductID.setCellValueFactory(new PropertyValueFactory<>("ProductID"));
             ColumnProductDescription.setCellValueFactory(new PropertyValueFactory<>("ProductDescription"));
             ColumnWarehouses.setCellValueFactory(new PropertyValueFactory<>("Warehouses"));
@@ -122,26 +129,21 @@ public class Controller implements Initializable {
             ColumnOutofpallet.setCellValueFactory(new PropertyValueFactory<>("OutOfPallet"));
             ColumnPalletsize.setCellValueFactory(new PropertyValueFactory<>("PalletSize"));
 
-            ProductTableView.setItems(ProductListPopulatorObservableList);
+            //~~~filtering~~~
+            FilteredList<ProductListPopulator> filteredData =
+                    new FilteredList<>(ProductListPopulatorObservableList, b -> true);
 
-            //adding description filter
-            FilteredList<ProductListPopulator> filteredData = new FilteredList<>(ProductListPopulatorObservableList, b -> true);
-            SearchDescription.textProperty().addListener((observable, oldValue, newValue) -> {
-                filteredData.setPredicate(ProductListPopulator -> {
-
-                    //if no search value then display all records or whatever records it current have no chacges
-                    if (newValue.isBlank()) { return true; }
-                    String searchKeyword = newValue.toUpperCase();
-                    if (ProductListPopulator.getProductDescription().toUpperCase().contains(searchKeyword)) { return true; }
-                    else return false;
-                });
-            });
+            SearchDescription.textProperty().addListener((obs, oldVal, newVal) -> applyFilters(filteredData));
+            SearchAll.textProperty().addListener((obs, oldVal, newVal) -> applyFilters(filteredData));
+            SearchCode.textProperty().addListener((obs, oldVal, newVal) -> applyFilters(filteredData));
+            SearchStock.textProperty().addListener((obs, oldVal, newval) -> applyFilters(filteredData));
+            SearchWarehouse.textProperty().addListener((obs, oldVal, newVal) -> applyFilters(filteredData));
 
             SortedList<ProductListPopulator> sortedData = new SortedList<>(filteredData);
-            //bind sorted result with table view
             sortedData.comparatorProperty().bind(ProductTableView.comparatorProperty());
-            //applying filtered and sorted data to the table view
+
             ProductTableView.setItems(sortedData);
+
 
         } catch (SQLException e) {
             System.out.println("Error in getting data and setting the table.");
@@ -151,7 +153,63 @@ public class Controller implements Initializable {
 
     }
 
+    private void applyFilters(FilteredList<ProductListPopulator> filteredData) {
+
+        String descriptionFilter = SearchDescription.getText().trim().toUpperCase();
+        String allFilter = SearchAll.getText().trim().toUpperCase();
+        String idFilter = SearchCode.getText().trim();
+        String stockFilter = SearchStock.getText().trim();
+        String warehouseFilter = SearchWarehouse.getText().trim();
+
+        filteredData.setPredicate(product -> {
+
+            if (!descriptionFilter.isBlank()) {
+                String description = product.getProductDescription();
+                if (description == null || !description.toUpperCase().contains(descriptionFilter)) { return false; }
+            }
+
+            if (!allFilter.isBlank()) {
+                String description = product.getProductDescription();
+                String warehouses = product.getWarehouses();
+                String stock = String.valueOf(product.getTotalStock());
+                String productId = String.valueOf(product.getProductID());
+
+
+                boolean matchesDescription = description != null &&
+                        description.toUpperCase().contains(allFilter);
+
+                boolean matchesWarehouse = warehouses != null &&
+                        warehouses.toUpperCase().contains(allFilter);
+
+                boolean matchesStock = stock != null &&
+                        stock.contains(allFilter);
+
+                boolean matchesId = productId != null &&
+                        productId.contains(allFilter);
+
+                if (!matchesDescription && !matchesWarehouse && !matchesStock && !matchesId) { return false; }
+            }
+
+            if (!idFilter.isBlank()) {
+                String productId = product.getProductID().toString();
+                if (!productId.contains(idFilter)) { return false; }
+            }
+
+            if (!stockFilter.isBlank()){
+                String stock = product.getTotalStock().toString();
+                if (!stock.contains(stockFilter)){ return false; }
+            }
+
+            if (!warehouseFilter.isBlank()){
+                String warehouse = product.getWarehouses().toString();
+                if (!warehouse.contains(warehouseFilter)){ return false; }
+            }
+
+            return true;
+        });
+    }
 }
+
 
 
 
