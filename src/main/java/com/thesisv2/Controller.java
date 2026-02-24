@@ -6,6 +6,7 @@ import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
@@ -57,6 +58,8 @@ public class Controller implements Initializable {
     private TextField SearchWarehouse;
     @FXML
     private TextField SearchStock;
+    @FXML
+    private ComboBox<String> StockOperator;
 
     ObservableList<ProductListPopulator> ProductListPopulatorObservableList = FXCollections.observableArrayList();
 
@@ -129,6 +132,9 @@ public class Controller implements Initializable {
             ColumnOutofpallet.setCellValueFactory(new PropertyValueFactory<>("OutOfPallet"));
             ColumnPalletsize.setCellValueFactory(new PropertyValueFactory<>("PalletSize"));
 
+            //~~~initializing value of stock operator~~~
+            StockOperator.setValue("=");
+
             //~~~filtering~~~
             FilteredList<ProductListPopulator> filteredData =
                     new FilteredList<>(ProductListPopulatorObservableList, b -> true);
@@ -159,6 +165,7 @@ public class Controller implements Initializable {
         String allFilter = SearchAll.getText().trim().toUpperCase();
         String idFilter = SearchCode.getText().trim();
         String stockFilter = SearchStock.getText().trim();
+        String operator = StockOperator.getValue();
         String warehouseFilter = SearchWarehouse.getText().trim();
 
         filteredData.setPredicate(product -> {
@@ -195,9 +202,27 @@ public class Controller implements Initializable {
                 if (!productId.contains(idFilter)) { return false; }
             }
 
-            if (!stockFilter.isBlank()){
-                String stock = product.getTotalStock().toString();
-                if (!stock.contains(stockFilter)){ return false; }
+            if (!stockFilter.isBlank()) {
+                try {
+                    int filterValue = Integer.parseInt(stockFilter);
+                    int productStock = product.getTotalStock();
+
+                    switch (operator) {
+                        case "<=":
+                            if (!(productStock <= filterValue)) return false;
+                            break;
+
+                        case "=":
+                            if (!(productStock == filterValue)) return false;
+                            break;
+
+                        case ">=":
+                            if (!(productStock >= filterValue)) return false;
+                            break;
+                    }
+                } catch (NumberFormatException e) {
+                    return false; //invalid input -> show nothing
+                }
             }
 
             if (!warehouseFilter.isBlank()){
