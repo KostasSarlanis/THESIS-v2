@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import java.lang.String?>
+<?import javafx.collections.FXCollections?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
@@ -14,10 +16,9 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
 <?import javafx.scene.text.Text?>
 
-<?import javafx.collections.FXCollections?>
-<?import java.lang.String?>
 <BorderPane xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.thesisv2.Controller">
    <top>
       <VBox fx:id="TopBar" BorderPane.alignment="CENTER">
@@ -85,45 +86,81 @@
                      <VBox.margin>
                         <Insets top="20.0" />
                      </VBox.margin>
+                     <font>
+                        <Font name="System Bold" size="13.0" />
+                     </font>
                   </Label>
                   <TextField fx:id="SearchCode">
                      <VBox.margin>
                         <Insets />
                      </VBox.margin>
+                     <font>
+                        <Font size="13.0" />
+                     </font>
                   </TextField>
                   <Label text="Περιγραφή">
                      <VBox.margin>
                         <Insets top="20.0" />
                      </VBox.margin>
+                     <font>
+                        <Font name="System Bold" size="13.0" />
+                     </font>
                   </Label>
-                  <TextField fx:id="SearchDescription" />
+                  <TextField fx:id="SearchDescription">
+                     <font>
+                        <Font size="13.0" />
+                     </font></TextField>
                   <Label text="Αποθήκη">
                      <VBox.margin>
                         <Insets top="20.0" />
                      </VBox.margin>
+                     <font>
+                        <Font name="System Bold" size="13.0" />
+                     </font>
                   </Label>
-                  <TextField fx:id="SearchWarehouse" />
+                  <TextField fx:id="SearchWarehouse">
+                     <font>
+                        <Font size="13.0" />
+                     </font></TextField>
                   <Label text="Τεμάχια">
                      <VBox.margin>
                         <Insets top="20.0" />
                      </VBox.margin>
+                     <font>
+                        <Font name="System Bold" size="13.0" />
+                     </font>
                   </Label>
-                  <ComboBox fx:id="StockOperator" opacity="0.78" prefWidth="150.0" >
+                  <ComboBox fx:id="StockOperator" opacity="0.78" prefWidth="150.0">
                           <items>
-                              <FXCollections fx:factory = "observableArrayList">
-                                  <String fx:value = "&lt;="/>
-                                  <String fx:value = "=" />
-                                  <String fx:value = "&gt;=" />
+                              <FXCollections fx:factory="observableArrayList">
+                                  <String fx:value="&lt;=" />
+                                  <String fx:value="=" />
+                                  <String fx:value="&gt;=" />
                               </FXCollections>
                           </items>
                   </ComboBox>
-                  <TextField fx:id="SearchStock" />
+                  <TextField fx:id="SearchStock">
+                     <font>
+                        <Font size="13.0" />
+                     </font></TextField>
                   <Label text="Εναλλακτικός">
                      <VBox.margin>
                         <Insets top="20.0" />
                      </VBox.margin>
+                     <font>
+                        <Font name="System Bold" size="13.0" />
+                     </font>
                   </Label>
-                  <TextField fx:id="SearchAll" />
+                  <TextField fx:id="SearchAll">
+                     <font>
+                        <Font size="13.0" />
+                     </font></TextField>
+                  <Region VBox.vgrow="ALWAYS" />
+                  <Label fx:id="ResultLabel" text="Αποτελέσματα: ">
+                     <font>
+                        <Font name="System Bold" size="14.0" />
+                     </font>
+                  </Label>
                </children>
             </VBox>
             <TableView fx:id="ProductTableView">

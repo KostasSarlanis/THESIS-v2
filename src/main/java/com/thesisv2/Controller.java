@@ -10,7 +10,9 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Label;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.beans.binding.Bindings;
 
 import java.net.URL;
 import java.sql.Connection;
@@ -60,6 +62,8 @@ public class Controller implements Initializable {
     private TextField SearchStock;
     @FXML
     private ComboBox<String> StockOperator;
+    @FXML
+    private Label ResultLabel;
 
     ObservableList<ProductListPopulator> ProductListPopulatorObservableList = FXCollections.observableArrayList();
 
@@ -149,6 +153,11 @@ public class Controller implements Initializable {
             sortedData.comparatorProperty().bind(ProductTableView.comparatorProperty());
 
             ProductTableView.setItems(sortedData);
+
+            //counter for the results
+            ResultLabel.textProperty().bind(
+                    javafx.beans.binding.Bindings.size(sortedData).asString("Αποτελέσματα: %d")
+            );
 
 
         } catch (SQLException e) {
