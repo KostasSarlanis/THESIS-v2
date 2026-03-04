@@ -33,11 +33,9 @@
                 <Menu fx:id="EditMenu" mnemonicParsing="false" text="Επεξεργασία">
                   <items>
                     <MenuItem fx:id="EditDelete" mnemonicParsing="false" onAction="#HandleEditDelete" text="Διαγραφή" />
-                        <MenuItem fx:id="EditDuplicate" mnemonicParsing="false" text="Κλωνοποίηση" />
+<!--                        <MenuItem fx:id="EditDuplicate" mnemonicParsing="false" onAction="#HandleEditDuplicate" text="Κλωνοποίηση" />-->
                         <MenuItem fx:id="EditNew" mnemonicParsing="false" onAction="#HandleEditNew" text="Καταχώριση" />
-                        <MenuItem fx:id="EditEdit" mnemonicParsing="false" text="Επεξεργασία" />
-                        <MenuItem fx:id="EditMassNew" mnemonicParsing="false" text="Μαζική καταχώριση" />
-                        <MenuItem fx:id="EditMassEdit" mnemonicParsing="false" text="Μαζική επεξεργασία" />
+<!--                        <MenuItem fx:id="EditEdit" mnemonicParsing="false" onAction="#HandleEditEdit" text="Επεξεργασία" />-->
                   </items>
                 </Menu>
                   <Menu fx:id="SettingsMenu" mnemonicParsing="false" text="Ρυθμίσεις">
