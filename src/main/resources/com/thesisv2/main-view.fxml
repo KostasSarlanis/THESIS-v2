@@ -78,7 +78,7 @@
       </HBox>
    </bottom>
    <center>
-      <SplitPane dividerPositions="0.1" BorderPane.alignment="CENTER">
+      <SplitPane fx:id="SplitPaneControll" dividerPositions="0.12" BorderPane.alignment="CENTER">
         <items>
             <VBox prefHeight="600.0" style="-fx-background-color: #eeeeee;">
                <children>
@@ -166,15 +166,15 @@
             <TableView fx:id="ProductTableView">
               <columns>
                 <TableColumn fx:id="ColumnProductID" prefWidth="82.0" text="Κωδικός" />
-                <TableColumn fx:id="ColumnProductDescription" prefWidth="134.0" text="Περιγραφή" />
-                  <TableColumn fx:id="ColumnWarehouses" prefWidth="64.0" text="Αποθήκες" />
-                  <TableColumn fx:id="ColumnPurchasePrice" prefWidth="91.0" text="Τιμή αγωράς" />
-                  <TableColumn fx:id="ColumnSellPrice" prefWidth="92.0" text="Τιμή λιανικής" />
-                  <TableColumn fx:id="ColumnWholesalePrice" prefWidth="97.0" text="Τιμή χονδρικής" />
-                  <TableColumn fx:id="ColumnStock" prefWidth="73.0" text="Απόθεμα" />
-                  <TableColumn fx:id="ColumnPallets" prefWidth="110.0" text="Παλέτες ατόφιες" />
-                  <TableColumn fx:id="ColumnOutofpallet" prefWidth="126.0" text="Τεμ. εκτώς παλέτας" />
-                  <TableColumn fx:id="ColumnPalletsize" prefWidth="107.0" text="Τεμ. ανα παλέτα" />
+                <TableColumn fx:id="ColumnProductDescription" prefWidth="255.0" text="Περιγραφή" />
+                  <TableColumn fx:id="ColumnWarehouses" prefWidth="117.0" text="Αποθήκες" />
+                  <TableColumn fx:id="ColumnPurchasePrice" text="Τιμή αγωράς" />
+                  <TableColumn fx:id="ColumnSellPrice" prefWidth="85.0" text="Τιμή λιανικής" />
+                  <TableColumn fx:id="ColumnWholesalePrice" prefWidth="94.0" text="Τιμή χονδρικής" />
+                  <TableColumn fx:id="ColumnStock" prefWidth="68.0" text="Απόθεμα" />
+                  <TableColumn fx:id="ColumnPallets" prefWidth="106.0" text="Παλέτες ατόφιες" />
+                  <TableColumn fx:id="ColumnOutofpallet" prefWidth="119.0" text="Τεμ. εκτώς παλέτας" />
+                  <TableColumn fx:id="ColumnPalletsize" prefWidth="101.0" text="Τεμ. ανα παλέτα" />
               </columns>
             </TableView>
         </items>

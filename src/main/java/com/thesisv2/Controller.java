@@ -6,13 +6,8 @@ import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
-import javafx.scene.control.TextField;
-import javafx.scene.control.Label;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.beans.binding.Bindings;
 
 import java.net.URL;
 import java.sql.Connection;
@@ -64,11 +59,21 @@ public class Controller implements Initializable {
     private ComboBox<String> StockOperator;
     @FXML
     private Label ResultLabel;
+    @FXML
+    private SplitPane SplitPaneControll;
 
     ObservableList<ProductListPopulator> ProductListPopulatorObservableList = FXCollections.observableArrayList();
 
     @Override
     public void initialize(URL url, ResourceBundle resourcebundle){
+        //making the divider in splitpane dynamic
+        SplitPane.Divider divider = SplitPaneControll.getDividers().get(0);
+
+        divider.positionProperty().addListener((obs, oldVal, newVal) ->{
+            if (newVal.doubleValue() != 0.12) divider.setPosition(0.12);
+        });
+
+        //connecting to database
         DBConnection connect = new DBConnection();
         Connection connection = connect.getConnection();
 
