@@ -79,7 +79,7 @@ public class Controller implements Initializable {
                 "    (\n" +
                 "       SELECT GROUP_CONCAT(DISTINCT WAREHOUSE ORDER BY WAREHOUSE)\n" +
                 "       FROM prod_warehouse_link l\n" +
-                "       WHERE l.PRODUCT = p.ProductID\n" +
+                "       WHERE l.PRODUCT = p.ProductID && l.STOCK > 0\n" +
                 "    ) AS Warehouses,\n" +
                 "    p.PurchasedPrice,\n" +
                 "    p.SellPrice,\n" +
