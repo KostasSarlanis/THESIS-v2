@@ -8,6 +8,8 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.stage.Stage;
+import javafx.event.ActionEvent;
 
 import java.net.URL;
 import java.sql.Connection;
@@ -61,6 +63,11 @@ public class Controller implements Initializable {
     private Label ResultLabel;
     @FXML
     private SplitPane SplitPaneControll;
+
+    @FXML
+    private MenuItem ButtonClose;
+    @FXML
+    private MenuItem EditDelete;
 
     ObservableList<ProductListPopulator> ProductListPopulatorObservableList = FXCollections.observableArrayList();
 
@@ -247,9 +254,90 @@ public class Controller implements Initializable {
             return true;
         });
     }
+
+    @FXML
+    private void HandleCloseButton(ActionEvent event){
+        Stage stage = (Stage) ((MenuItem) event.getSource()).getParentPopup().getOwnerWindow();
+        stage.close();
+    }
+    @FXML
+    private void HandleEditDelete(ActionEvent event){
+        // Get selected row
+        ProductListPopulator selected = ProductTableView.getSelectionModel().getSelectedItem();
+
+        if (selected == null) {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("Δεν επιλέχθηκε είδος");
+            alert.setHeaderText(null);
+            alert.setContentText("Παρακαλώ επίλεξε ένα είδος από τον πίνακα για διαγραφή.");
+            alert.showAndWait();
+            return;
+        }
+
+        //Confirmation popup with product description
+        String desc = selected.getProductDescription();
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Επιβεβαίωση Διαγραφής");
+        confirm.setHeaderText("Θέλεις σίγουρα να διαγράψεις το ακόλουθο είδος;");
+        confirm.setContentText(desc == null ? "(χωρίς περιγραφή)" : desc);
+
+        ButtonType yes = new ButtonType("Ναι", ButtonBar.ButtonData.YES);
+        ButtonType no  = new ButtonType("Όχι", ButtonBar.ButtonData.NO);
+        confirm.getButtonTypes().setAll(yes, no);
+
+        var result = confirm.showAndWait();
+        if (result.isEmpty() || result.get() != yes) {
+            return; //user cancelled
+        }
+
+        //Delete from DB
+        int productId = selected.getProductID();
+
+        DBConnection connect = new DBConnection();
+        Connection connection = connect.getConnection();
+
+        String deleteLinksSql = "DELETE FROM prod_warehouse_link WHERE PRODUCT = " + productId;
+        String deleteProductSql = "DELETE FROM products WHERE ProductID = " + productId;
+
+        try (Statement st = connection.createStatement()) {
+
+            // If you have FK constraints, delete children first
+            st.executeUpdate(deleteLinksSql);
+            int affected = st.executeUpdate(deleteProductSql);
+
+            if (affected > 0) {
+                //Remove from the observable list (table updates automatically)
+                ProductListPopulatorObservableList.remove(selected);
+
+                Alert ok = new Alert(Alert.AlertType.INFORMATION);
+                ok.setTitle("Διαγραφή");
+                ok.setHeaderText(null);
+                ok.setContentText("Το είδος διαγράφηκε επιτυχώς.");
+                ok.showAndWait();
+            } else {
+                Alert err = new Alert(Alert.AlertType.ERROR);
+                err.setTitle("Σφάλμα");
+                err.setHeaderText("Δεν έγινε διαγραφή");
+                err.setContentText("Δεν βρέθηκε το είδος στη βάση (ίσως έχει ήδη διαγραφεί).");
+                err.showAndWait();
+            }
+
+        } catch (SQLException e) {
+            Alert err = new Alert(Alert.AlertType.ERROR);
+            err.setTitle("Σφάλμα Βάσης");
+            err.setHeaderText("Αποτυχία διαγραφής");
+            err.setContentText(e.getMessage());
+            err.showAndWait();
+            e.printStackTrace();
+        }
+    }
+
+
+
+
+
+
 }
-
-
 
 
 
