@@ -15,6 +15,7 @@ import javafx.event.ActionEvent;
 import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
 import javafx.geometry.Insets;
+import java.util.regex.Pattern;
 
 import java.net.URL;
 import java.sql.Connection;
@@ -200,7 +201,9 @@ public class Controller implements Initializable {
 
             if (!descriptionFilter.isBlank()) {
                 String description = product.getProductDescription();
-                if (description == null || !description.toUpperCase().contains(descriptionFilter)) { return false; }
+                if (!matchesWildcard(description, descriptionFilter, true)) {
+                    return false;
+                }
             }
 
             if (!allFilter.isBlank()) {
@@ -209,25 +212,21 @@ public class Controller implements Initializable {
                 String stock = String.valueOf(product.getTotalStock());
                 String productId = String.valueOf(product.getProductID());
 
+                boolean matchesDescription = matchesWildcard(description, allFilter, true);
+                boolean matchesWarehouse = matchesWildcard(warehouses, allFilter, true);
+                boolean matchesStock = matchesWildcard(stock, allFilter, false);
+                boolean matchesId = matchesWildcard(productId, allFilter, false);
 
-                boolean matchesDescription = description != null &&
-                        description.toUpperCase().contains(allFilter);
-
-                boolean matchesWarehouse = warehouses != null &&
-                        warehouses.toUpperCase().contains(allFilter);
-
-                boolean matchesStock = stock != null &&
-                        stock.contains(allFilter);
-
-                boolean matchesId = productId != null &&
-                        productId.contains(allFilter);
-
-                if (!matchesDescription && !matchesWarehouse && !matchesStock && !matchesId) { return false; }
+                if (!matchesDescription && !matchesWarehouse && !matchesStock && !matchesId) {
+                    return false;
+                }
             }
 
             if (!idFilter.isBlank()) {
-                String productId = product.getProductID().toString();
-                if (!productId.contains(idFilter)) { return false; }
+                String productId = String.valueOf(product.getProductID());
+                if (!matchesWildcard(productId, idFilter, false)) {
+                    return false;
+                }
             }
 
             if (!stockFilter.isBlank()) {
@@ -249,13 +248,15 @@ public class Controller implements Initializable {
                             break;
                     }
                 } catch (NumberFormatException e) {
-                    return false; //invalid input -> show nothing
+                    return false;
                 }
             }
 
-            if (!warehouseFilter.isBlank()){
-                String warehouse = product.getWarehouses().toString();
-                if (!warehouse.contains(warehouseFilter)){ return false; }
+            if (!warehouseFilter.isBlank()) {
+                String warehouse = product.getWarehouses();
+                if (!matchesWildcard(warehouse, warehouseFilter, true)) {
+                    return false;
+                }
             }
 
             return true;
@@ -554,6 +555,25 @@ public class Controller implements Initializable {
     }
 
     //~~~~~ NEW HANDLER HELPERS ~~~~~
+    private boolean matchesWildcard(String value, String filter, boolean ignoreCase) {
+        if (filter == null || filter.isBlank()) {
+            return true;
+        }
+
+        if (value == null) {
+            return false;
+        }
+
+        String escaped = Pattern.quote(filter).replace("*", "\\E.*\\Q");
+        String regex = ".*" + escaped + ".*";
+
+        if (ignoreCase) {
+            return Pattern.compile(regex, Pattern.CASE_INSENSITIVE).matcher(value).matches();
+        } else {
+            return Pattern.matches(regex, value);
+        }
+    }
+
     private HBox createWarehouseStockRow(List<String> warehouses, VBox container) {
         ComboBox<String> cbWarehouse = new ComboBox<>();
         cbWarehouse.getItems().addAll(warehouses);
