@@ -19,6 +19,8 @@
 <?import javafx.scene.text.Font?>
 <?import javafx.scene.text.Text?>
 
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.Tab?>
 <BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.thesisv2.Controller">
    <top>
       <VBox fx:id="TopBar" BorderPane.alignment="CENTER">
@@ -31,11 +33,11 @@
                   </items>
                 </Menu>
                 <Menu fx:id="EditMenu" mnemonicParsing="false" text="Επεξεργασία">
-                  <items>
-                        <MenuItem fx:id="EditNew" mnemonicParsing="false" onAction="#HandleEditNew" text="Καταχώριση" />
-                    <MenuItem fx:id="EditDelete" mnemonicParsing="false" onAction="#HandleEditDelete" text="Διαγραφή" />
-                        <MenuItem fx:id="EditEdit" mnemonicParsing="false" onAction="#HandleEditEdit" text="Επεξεργασία" />
-                  </items>
+<!--                  <items>-->
+<!--                        <MenuItem fx:id="EditNew" mnemonicParsing="false" onAction="#HandleEditNew" text="Καταχώριση" />-->
+<!--                    <MenuItem fx:id="EditDelete" mnemonicParsing="false" onAction="#HandleEditDelete" text="Διαγραφή" />-->
+<!--                        <MenuItem fx:id="EditEdit" mnemonicParsing="false" onAction="#HandleEditEdit" text="Επεξεργασία" />-->
+<!--                  </items>-->
                 </Menu>
                   <Menu fx:id="SettingsMenu" mnemonicParsing="false" text="Ρυθμίσεις">
                     <items>
@@ -49,16 +51,16 @@
                   <Insets />
                </VBox.margin>
             </MenuBar>
-            <MenuBar fx:id="SecondMenuBar" style="-fx-background-color: #eeeeee;" VBox.vgrow="ALWAYS">
-              <menus>
-                <Menu fx:id="ListaEidon" mnemonicParsing="false" text="Λίστα ειδών" />
-                <Menu fx:id="ListaApothikon" mnemonicParsing="false" text="Λίστα αποθηκών" />
-                <Menu fx:id="EkdosiParastatikou" mnemonicParsing="false" text="Έκδοση παραστατικού" />
-                  <Menu fx:id="Endodiakinisi" mnemonicParsing="false" text="Ενδοδιακίνηση" />
-                  <Menu fx:id="ListaKiniseon" mnemonicParsing="false" text="Λίστα κινήσεων" />
-                  <Menu fx:id="ListaParastatikon" mnemonicParsing="false" text="Λίστα παραστατικών" />
-              </menus>
-            </MenuBar>
+<!--            <MenuBar fx:id="SecondMenuBar" style="-fx-background-color: #eeeeee;" VBox.vgrow="ALWAYS">-->
+<!--              <menus>-->
+<!--                <Menu fx:id="ListaEidon" mnemonicParsing="false" text="Λίστα ειδών" />-->
+<!--                <Menu fx:id="ListaApothikon" mnemonicParsing="false" text="Λίστα αποθηκών" />-->
+<!--                <Menu fx:id="EkdosiParastatikou" mnemonicParsing="false" text="Έκδοση παραστατικού" />-->
+<!--                  <Menu fx:id="Endodiakinisi" mnemonicParsing="false" text="Ενδοδιακίνηση" />-->
+<!--                  <Menu fx:id="ListaKiniseon" mnemonicParsing="false" text="Λίστα κινήσεων" />-->
+<!--                  <Menu fx:id="ListaParastatikon" mnemonicParsing="false" text="Λίστα παραστατικών" />-->
+<!--              </menus>-->
+<!--            </MenuBar>-->
          </children>
       </VBox>
    </top>
@@ -75,106 +77,20 @@
       </HBox>
    </bottom>
    <center>
-      <SplitPane fx:id="SplitPaneControll" dividerPositions="0.12" BorderPane.alignment="CENTER">
-        <items>
-            <VBox prefHeight="600.0" style="-fx-background-color: #eeeeee;">
-               <children>
-                  <Label text="Κωδικός">
-                     <VBox.margin>
-                        <Insets top="20.0" />
-                     </VBox.margin>
-                     <font>
-                        <Font name="System Bold" size="13.0" />
-                     </font>
-                  </Label>
-                  <TextField fx:id="SearchCode">
-                     <VBox.margin>
-                        <Insets />
-                     </VBox.margin>
-                     <font>
-                        <Font size="13.0" />
-                     </font>
-                  </TextField>
-                  <Label text="Περιγραφή">
-                     <VBox.margin>
-                        <Insets top="20.0" />
-                     </VBox.margin>
-                     <font>
-                        <Font name="System Bold" size="13.0" />
-                     </font>
-                  </Label>
-                  <TextField fx:id="SearchDescription">
-                     <font>
-                        <Font size="13.0" />
-                     </font></TextField>
-                  <Label text="Αποθήκη">
-                     <VBox.margin>
-                        <Insets top="20.0" />
-                     </VBox.margin>
-                     <font>
-                        <Font name="System Bold" size="13.0" />
-                     </font>
-                  </Label>
-                  <TextField fx:id="SearchWarehouse">
-                     <font>
-                        <Font size="13.0" />
-                     </font></TextField>
-                  <Label text="Τεμάχια">
-                     <VBox.margin>
-                        <Insets top="20.0" />
-                     </VBox.margin>
-                     <font>
-                        <Font name="System Bold" size="13.0" />
-                     </font>
-                  </Label>
-                  <ComboBox fx:id="StockOperator" opacity="0.78" prefWidth="150.0">
-                          <items>
-                              <FXCollections fx:factory="observableArrayList">
-                                  <String fx:value="&lt;=" />
-                                  <String fx:value="=" />
-                                  <String fx:value="&gt;=" />
-                              </FXCollections>
-                          </items>
-                  </ComboBox>
-                  <TextField fx:id="SearchStock">
-                     <font>
-                        <Font size="13.0" />
-                     </font></TextField>
-                  <Label text="Εναλλακτικός">
-                     <VBox.margin>
-                        <Insets top="20.0" />
-                     </VBox.margin>
-                     <font>
-                        <Font name="System Bold" size="13.0" />
-                     </font>
-                  </Label>
-                  <TextField fx:id="SearchAll">
-                     <font>
-                        <Font size="13.0" />
-                     </font></TextField>
-                  <Region VBox.vgrow="ALWAYS" />
-                  <Label fx:id="ResultLabel" text="Αποτελέσματα: ">
-                     <font>
-                        <Font name="System Bold" size="14.0" />
-                     </font>
-                  </Label>
-               </children>
-            </VBox>
-            <TableView fx:id="ProductTableView">
-              <columns>
-                <TableColumn fx:id="ColumnProductID" prefWidth="82.0" text="Κωδικός" />
-                <TableColumn fx:id="ColumnProductDescription" prefWidth="255.0" text="Περιγραφή" />
-                  <TableColumn fx:id="ColumnWarehouses" prefWidth="117.0" text="Αποθήκες" />
-                  <TableColumn fx:id="ColumnPurchasePrice" text="Τιμή αγωράς" />
-                  <TableColumn fx:id="ColumnSellPrice" prefWidth="85.0" text="Τιμή λιανικής" />
-                  <TableColumn fx:id="ColumnWholesalePrice" prefWidth="94.0" text="Τιμή χονδρικής" />
-                  <TableColumn fx:id="ColumnStock" prefWidth="68.0" text="Απόθεμα" />
-                  <TableColumn fx:id="ColumnPallets" prefWidth="106.0" text="Παλέτες ατόφιες" />
-                  <TableColumn fx:id="ColumnOutofpallet" prefWidth="119.0" text="Τεμ. εκτώς παλέτας" />
-                  <TableColumn fx:id="ColumnPalletsize" prefWidth="101.0" text="Τεμ. ανα παλέτα" />
-              </columns>
-            </TableView>
-        </items>
-      </SplitPane>
+       <TabPane tabClosingPolicy="UNAVAILABLE">
+           <tabs>
+               <Tab text="Λίστα ειδών">
+                   <content>
+                       <fx:include source="product-list-view.fxml"/>
+                   </content>
+               </Tab>
+
+               <Tab text="Νέα προβολή">
+                   <content>
+                       <fx:include source="Warehouse-list-view.fxml"/>
+                   </content>
+               </Tab>
+           </tabs>
+       </TabPane>
    </center>
 </BorderPane>

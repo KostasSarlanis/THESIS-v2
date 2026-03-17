@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<SplitPane fx:id="SplitPaneControll"
+        xmlns:fx="http://javafx.com/fxml"
+        fx:controller="com.thesisv2.ProductListController"
+        dividerPositions="0.12"
+        BorderPane.alignment="CENTER">
+    <items>
+        <VBox prefHeight="600.0" style="-fx-background-color: #eeeeee;">
+            <children>
+                <Label text="Κωδικός">
+                    <VBox.margin>
+                        <Insets top="20.0" />
+                    </VBox.margin>
+                    <font>
+                        <Font name="System Bold" size="13.0" />
+                    </font>
+                </Label>
+                <TextField fx:id="SearchCode">
+                    <VBox.margin>
+                        <Insets />
+                    </VBox.margin>
+                    <font>
+                        <Font size="13.0" />
+                    </font>
+                </TextField>
+                <Label text="Περιγραφή">
+                    <VBox.margin>
+                        <Insets top="20.0" />
+                    </VBox.margin>
+                    <font>
+                        <Font name="System Bold" size="13.0" />
+                    </font>
+                </Label>
+                <TextField fx:id="SearchDescription">
+                    <font>
+                        <Font size="13.0" />
+                    </font></TextField>
+                <Label text="Αποθήκη">
+                    <VBox.margin>
+                        <Insets top="20.0" />
+                    </VBox.margin>
+                    <font>
+                        <Font name="System Bold" size="13.0" />
+                    </font>
+                </Label>
+                <TextField fx:id="SearchWarehouse">
+                    <font>
+                        <Font size="13.0" />
+                    </font></TextField>
+                <Label text="Τεμάχια">
+                    <VBox.margin>
+                        <Insets top="20.0" />
+                    </VBox.margin>
+                    <font>
+                        <Font name="System Bold" size="13.0" />
+                    </font>
+                </Label>
+                <ComboBox fx:id="StockOperator" opacity="0.78" prefWidth="150.0">
+                    <items>
+                        <FXCollections fx:factory="observableArrayList">
+                            <String fx:value="&lt;=" />
+                            <String fx:value="=" />
+                            <String fx:value="&gt;=" />
+                        </FXCollections>
+                    </items>
+                </ComboBox>
+                <TextField fx:id="SearchStock">
+                    <font>
+                        <Font size="13.0" />
+                    </font></TextField>
+                <Label text="Εναλλακτικός">
+                    <VBox.margin>
+                        <Insets top="20.0" />
+                    </VBox.margin>
+                    <font>
+                        <Font name="System Bold" size="13.0" />
+                    </font>
+                </Label>
+                <TextField fx:id="SearchAll">
+                    <font>
+                        <Font size="13.0" />
+                    </font></TextField>
+                <Region VBox.vgrow="ALWAYS" />
+                <Label fx:id="ResultLabel" text="Αποτελέσματα: ">
+                    <font>
+                        <Font name="System Bold" size="14.0" />
+                    </font>
+                </Label>
+            </children>
+        </VBox>
+        <TableView fx:id="ProductTableView">
+            <columns>
+                <TableColumn fx:id="ColumnProductID" prefWidth="82.0" text="Κωδικός" />
+                <TableColumn fx:id="ColumnProductDescription" prefWidth="255.0" text="Περιγραφή" />
+                <TableColumn fx:id="ColumnWarehouses" prefWidth="117.0" text="Αποθήκες" />
+                <TableColumn fx:id="ColumnPurchasePrice" text="Τιμή αγωράς" />
+                <TableColumn fx:id="ColumnSellPrice" prefWidth="85.0" text="Τιμή λιανικής" />
+                <TableColumn fx:id="ColumnWholesalePrice" prefWidth="94.0" text="Τιμή χονδρικής" />
+                <TableColumn fx:id="ColumnStock" prefWidth="68.0" text="Απόθεμα" />
+                <TableColumn fx:id="ColumnPallets" prefWidth="106.0" text="Παλέτες ατόφιες" />
+                <TableColumn fx:id="ColumnOutofpallet" prefWidth="119.0" text="Τεμ. εκτώς παλέτας" />
+                <TableColumn fx:id="ColumnPalletsize" prefWidth="101.0" text="Τεμ. ανα παλέτα" />
+            </columns>
+        </TableView>
+    </items>
+</SplitPane>
+

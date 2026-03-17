@@ -12,6 +12,8 @@ module com.example.thesisv2 {
     requires com.almasb.fxgl.all;
     requires java.sql;
     requires jdk.jdi;
+    requires javafx.base;
+    requires javafx.graphics;
 
     opens com.thesisv2 to javafx.fxml;
     exports com.thesisv2;

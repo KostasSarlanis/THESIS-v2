@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<SplitPane xmlns:fx="http://javafx.com/fxml"
+           fx:controller="com.thesisv2.WarehouseListController">
+
+    <items>
+        <AnchorPane>
+            <children>
+                <Label layoutX="20" layoutY="20" text="Left side of second view" />
+            </children>
+        </AnchorPane>
+
+        <AnchorPane>
+            <children>
+                <Label layoutX="20" layoutY="20" text="Right side of second view" />
+            </children>
+        </AnchorPane>
+    </items>
+</SplitPane>
