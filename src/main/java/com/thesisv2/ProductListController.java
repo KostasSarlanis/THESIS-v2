@@ -244,13 +244,17 @@ public class ProductListController implements Initializable {
                 .replace('ό', 'ο')
                 .replace('ύ', 'υ')
                 .replace('ώ', 'ω')
+                .replace('ϊ', 'ι')
+                .replace('ΐ', 'ι')
+                .replace('ϋ', 'υ')
+                .replace('ΰ', 'υ')
                 .replace('ς', 'σ');
     }
 
     private void applyFilters(FilteredList<ProductListPopulator> filteredData) {
 
-        String descriptionFilter = removeGreekTones(SearchDescription.getText().trim().toLowerCase(new Locale("el", "GR")));
-        String allFilter = SearchAll.getText().trim().toLowerCase(new Locale("el", "GR"));
+        String descriptionFilter = SearchDescription.getText().trim();
+        String allFilter = SearchAll.getText().trim();
         String idFilter = SearchCode.getText().trim();
         String stockFilter = SearchStock.getText().trim();
         String operator = StockOperator.getValue();
@@ -259,17 +263,14 @@ public class ProductListController implements Initializable {
         filteredData.setPredicate(product -> {
 
             if (!descriptionFilter.isBlank()) {
-                String description = removeGreekTones(product.getProductDescription().toLowerCase(new Locale("el", "GR")));
-
-                if (description == null) return false;
-
-                description = description.toLowerCase(new Locale("el", "GR"));
-
-                if (!description.contains(descriptionFilter)) return false;
+                String description = product.getProductDescription();
+                if (!matchesWildcard(description, descriptionFilter, true)) {
+                    return false;
+                }
             }
 
             if (!allFilter.isBlank()) {
-                String description = removeGreekTones(product.getProductDescription().toLowerCase(new Locale("el", "GR")));
+                String description = product.getProductDescription();
                 String warehouses = product.getWarehouses();
                 String stock = String.valueOf(product.getTotalStock());
                 String productId = String.valueOf(product.getProductID());
@@ -298,15 +299,13 @@ public class ProductListController implements Initializable {
 
                     switch (operator) {
                         case "<=":
-                            if (!(productStock <= filterValue)) return false;
+                            if (productStock > filterValue) return false;
                             break;
-
                         case "=":
-                            if (!(productStock == filterValue)) return false;
+                            if (productStock != filterValue) return false;
                             break;
-
                         case ">=":
-                            if (!(productStock >= filterValue)) return false;
+                            if (productStock < filterValue) return false;
                             break;
                     }
                 } catch (NumberFormatException e) {
@@ -620,22 +619,43 @@ public class ProductListController implements Initializable {
 
     //~~~~~ NEW HANDLER HELPERS ~~~~~                                                                                  .
     private boolean matchesWildcard(String value, String filter, boolean ignoreCase) {
-        if (filter == null || filter.isBlank()) {
-            return true;
-        }
+        if (filter == null || filter.isBlank()) return true;
+        if (value == null) return false;
 
-        if (value == null) {
-            return false;
-        }
-
-        String escaped = Pattern.quote(filter).replace("*", "\\E.*\\Q");
-        String regex = ".*" + escaped + ".*";
+        String sourceValue = value;
+        String sourceFilter = filter;
 
         if (ignoreCase) {
-            return Pattern.compile(regex, Pattern.CASE_INSENSITIVE).matcher(value).matches();
-        } else {
-            return Pattern.matches(regex, value);
+            sourceValue = removeGreekTones(sourceValue.toLowerCase(new Locale("el", "GR")));
+            sourceFilter = removeGreekTones(sourceFilter.toLowerCase(new Locale("el", "GR")));
         }
+
+        // If there is no *, do normal contains search
+        if (!sourceFilter.contains("*")) {
+            return sourceValue.contains(sourceFilter);
+        }
+
+        // Collapse multiple * into one *
+        sourceFilter = sourceFilter.replaceAll("\\*+", "*");
+
+        StringBuilder regexBuilder = new StringBuilder("^");
+
+        String[] parts = sourceFilter.split("\\*", -1);
+
+        for (int i = 0; i < parts.length; i++) {
+            regexBuilder.append(Pattern.quote(parts[i]));
+            if (i < parts.length - 1) {
+                regexBuilder.append(".*");
+            }
+        }
+
+        regexBuilder.append("$");
+
+        String regex = regexBuilder.toString();
+
+        return Pattern.compile(regex, Pattern.UNICODE_CASE)
+                .matcher(sourceValue)
+                .matches();
     }
 
     private HBox createWarehouseStockRow(List<String> warehouses, VBox container) {
