@@ -19,7 +19,7 @@
 <?import javafx.scene.text.Font?>
 <?import javafx.scene.text.Text?>
 
-<BorderPane xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.thesisv2.Controller">
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.thesisv2.Controller">
    <top>
       <VBox fx:id="TopBar" BorderPane.alignment="CENTER">
          <children>
@@ -32,10 +32,9 @@
                 </Menu>
                 <Menu fx:id="EditMenu" mnemonicParsing="false" text="Επεξεργασία">
                   <items>
-                    <MenuItem fx:id="EditDelete" mnemonicParsing="false" onAction="#HandleEditDelete" text="Διαγραφή" />
-<!--                        <MenuItem fx:id="EditDuplicate" mnemonicParsing="false" onAction="#HandleEditDuplicate" text="Κλωνοποίηση" />-->
                         <MenuItem fx:id="EditNew" mnemonicParsing="false" onAction="#HandleEditNew" text="Καταχώριση" />
-<!--                        <MenuItem fx:id="EditEdit" mnemonicParsing="false" onAction="#HandleEditEdit" text="Επεξεργασία" />-->
+                    <MenuItem fx:id="EditDelete" mnemonicParsing="false" onAction="#HandleEditDelete" text="Διαγραφή" />
+                        <MenuItem fx:id="EditEdit" mnemonicParsing="false" onAction="#HandleEditEdit" text="Επεξεργασία" />
                   </items>
                 </Menu>
                   <Menu fx:id="SettingsMenu" mnemonicParsing="false" text="Ρυθμίσεις">

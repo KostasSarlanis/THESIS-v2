@@ -16,6 +16,10 @@ import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
 import javafx.geometry.Insets;
 import java.util.regex.Pattern;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.TableRow;
+import javafx.beans.binding.Bindings;
 
 import java.net.URL;
 import java.sql.Connection;
@@ -34,7 +38,6 @@ public class Controller implements Initializable {
     //~~~setting up the columns~~~
     @FXML
     private TableView<ProductListPopulator> ProductTableView;
-
     @FXML
     private  TableColumn<ProductListPopulator, Integer> ColumnProductID;
     @FXML
@@ -76,11 +79,53 @@ public class Controller implements Initializable {
     private MenuItem ButtonClose;
     @FXML
     private MenuItem EditDelete;
+    @FXML
+    private MenuItem EditEdit;
+
 
     ObservableList<ProductListPopulator> ProductListPopulatorObservableList = FXCollections.observableArrayList();
 
+    private void setupContextMenu() {
+        ProductTableView.setRowFactory(tv -> {
+            TableRow<ProductListPopulator> row = new TableRow<>();
+
+            ContextMenu contextMenu = new ContextMenu();
+
+            MenuItem editItem = new MenuItem("Edit");
+            MenuItem deleteItem = new MenuItem("Delete");
+
+            editItem.setOnAction(event -> {
+                ProductListPopulator selectedProduct = row.getItem();
+                if (selectedProduct != null) {
+                    ProductTableView.getSelectionModel().select(selectedProduct);
+                    openEditDialog(selectedProduct);
+                }
+            });
+
+            deleteItem.setOnAction(event -> {
+                ProductListPopulator selectedProduct = row.getItem();
+                if (selectedProduct != null) {
+                    ProductTableView.getSelectionModel().select(selectedProduct);
+                    confirmAndDelete(selectedProduct);
+                }
+            });
+
+            contextMenu.getItems().addAll(editItem, deleteItem);
+
+            row.contextMenuProperty().bind(
+                    Bindings.when(row.emptyProperty())
+                            .then((ContextMenu) null)
+                            .otherwise(contextMenu)
+            );
+
+            return row;
+        });
+    }
+
+
     @Override
     public void initialize(URL url, ResourceBundle resourcebundle){
+        setupContextMenu();
         //making the divider in splitpane dynamic
         SplitPane.Divider divider = SplitPaneControll.getDividers().get(0);
 
@@ -187,11 +232,25 @@ public class Controller implements Initializable {
         }
 
     }
+//          ~~~~~ REMOVES GREEK TONES FROM TEXT ~~~~~                                                                  .
+    private String removeGreekTones(String text) {
+        if (text == null) return "";
+
+        return text
+                .replace('ά', 'α')
+                .replace('έ', 'ε')
+                .replace('ή', 'η')
+                .replace('ί', 'ι')
+                .replace('ό', 'ο')
+                .replace('ύ', 'υ')
+                .replace('ώ', 'ω')
+                .replace('ς', 'σ');
+    }
 
     private void applyFilters(FilteredList<ProductListPopulator> filteredData) {
 
-        String descriptionFilter = SearchDescription.getText().trim().toUpperCase();
-        String allFilter = SearchAll.getText().trim().toUpperCase();
+        String descriptionFilter = removeGreekTones(SearchDescription.getText().trim().toLowerCase(new Locale("el", "GR")));
+        String allFilter = SearchAll.getText().trim().toLowerCase(new Locale("el", "GR"));
         String idFilter = SearchCode.getText().trim();
         String stockFilter = SearchStock.getText().trim();
         String operator = StockOperator.getValue();
@@ -200,14 +259,17 @@ public class Controller implements Initializable {
         filteredData.setPredicate(product -> {
 
             if (!descriptionFilter.isBlank()) {
-                String description = product.getProductDescription();
-                if (!matchesWildcard(description, descriptionFilter, true)) {
-                    return false;
-                }
+                String description = removeGreekTones(product.getProductDescription().toLowerCase(new Locale("el", "GR")));
+
+                if (description == null) return false;
+
+                description = description.toLowerCase(new Locale("el", "GR"));
+
+                if (!description.contains(descriptionFilter)) return false;
             }
 
             if (!allFilter.isBlank()) {
-                String description = product.getProductDescription();
+                String description = removeGreekTones(product.getProductDescription().toLowerCase(new Locale ("el", "GR")));
                 String warehouses = product.getWarehouses();
                 String stock = String.valueOf(product.getTotalStock());
                 String productId = String.valueOf(product.getProductID());
@@ -264,18 +326,67 @@ public class Controller implements Initializable {
     }
 
 
-
-    //~~~~~ CLOSE HANDLER ~~~~~
+    //~~~~~ CLOSE HANDLER ~~~~~                                                                                        .
     @FXML
     private void HandleCloseButton(ActionEvent event){
         Stage stage = (Stage) ((MenuItem) event.getSource()).getParentPopup().getOwnerWindow();
         stage.close();
     }
 
-    //~~~~ DELETE HANDLER ~~~~~
+    //~~~~ DELETE HANDLER ~~~~~                                                                                        .
+    private void confirmAndDelete(ProductListPopulator product) {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Delete Product");
+        alert.setHeaderText("Delete Product ID: " + product.getProductID());
+        alert.setContentText("Are you sure?");
+
+        Optional<ButtonType> result = alert.showAndWait();
+
+        if (result.isPresent() && result.get() == ButtonType.OK){
+            deleteProductById(product.getProductID());
+        }
+    }
+    private void deleteProductById(int productId) {
+        DBConnection connect = new DBConnection();
+        Connection connection = connect.getConnection();
+
+        String deleteLinksSql = "DELETE FROM prod_warehouse_link WHERE PRODUCT = ?";
+        String deleteProductSql = "DELETE FROM products WHERE ProductID = ?";
+
+        try {
+            connection.setAutoCommit(false);
+
+            try (PreparedStatement ps1 = connection.prepareStatement(deleteLinksSql);
+                 PreparedStatement ps2 = connection.prepareStatement(deleteProductSql)) {
+
+                ps1.setInt(1, productId);
+                ps1.executeUpdate();
+
+                ps2.setInt(1, productId);
+                int affected = ps2.executeUpdate();
+
+                connection.commit();
+
+                if (affected > 0) {
+                    ProductListPopulatorObservableList.removeIf(p -> p.getProductID() == productId);
+                    ProductTableView.refresh();
+
+                    new Alert(Alert.AlertType.INFORMATION, "Το είδος διαγράφηκε επιτυχώς.").showAndWait();
+                } else {
+                    new Alert(Alert.AlertType.ERROR, "Δεν βρέθηκε το είδος στη βάση.").showAndWait();
+                }
+            }
+
+        } catch (SQLException e) {
+            try { connection.rollback(); } catch (SQLException ignored) {}
+            new Alert(Alert.AlertType.ERROR, "Σφάλμα βάσης: " + e.getMessage()).showAndWait();
+            e.printStackTrace();
+        } finally {
+            try { connection.setAutoCommit(true); } catch (SQLException ignored) {}
+        }
+    }
     @FXML
-    private void HandleEditDelete(ActionEvent event){
-        // Get selected row
+    private void HandleEditDelete(ActionEvent event) {
         ProductListPopulator selected = ProductTableView.getSelectionModel().getSelectedItem();
 
         if (selected == null) {
@@ -287,65 +398,10 @@ public class Controller implements Initializable {
             return;
         }
 
-        //Confirmation popup with product description
-        String desc = selected.getProductDescription();
-        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
-        confirm.setTitle("Επιβεβαίωση Διαγραφής");
-        confirm.setHeaderText("Θέλεις σίγουρα να διαγράψεις το ακόλουθο είδος;");
-        confirm.setContentText(desc == null ? "(χωρίς περιγραφή)" : desc);
-
-        ButtonType yes = new ButtonType("Ναι", ButtonBar.ButtonData.YES);
-        ButtonType no  = new ButtonType("Όχι", ButtonBar.ButtonData.NO);
-        confirm.getButtonTypes().setAll(yes, no);
-
-        var result = confirm.showAndWait();
-        if (result.isEmpty() || result.get() != yes) {
-            return; //user cancelled
-        }
-
-        //Delete from DB
-        int productId = selected.getProductID();
-
-        DBConnection connect = new DBConnection();
-        Connection connection = connect.getConnection();
-
-        String deleteLinksSql = "DELETE FROM prod_warehouse_link WHERE PRODUCT = " + productId;
-        String deleteProductSql = "DELETE FROM products WHERE ProductID = " + productId;
-
-        try (Statement st = connection.createStatement()) {
-
-            // If you have FK constraints, delete children first
-            st.executeUpdate(deleteLinksSql);
-            int affected = st.executeUpdate(deleteProductSql);
-
-            if (affected > 0) {
-                //Remove from the observable list (table updates automatically)
-                ProductListPopulatorObservableList.remove(selected);
-
-                Alert ok = new Alert(Alert.AlertType.INFORMATION);
-                ok.setTitle("Διαγραφή");
-                ok.setHeaderText(null);
-                ok.setContentText("Το είδος διαγράφηκε επιτυχώς.");
-                ok.showAndWait();
-            } else {
-                Alert err = new Alert(Alert.AlertType.ERROR);
-                err.setTitle("Σφάλμα");
-                err.setHeaderText("Δεν έγινε διαγραφή");
-                err.setContentText("Δεν βρέθηκε το είδος στη βάση (ίσως έχει ήδη διαγραφεί).");
-                err.showAndWait();
-            }
-
-        } catch (SQLException e) {
-            Alert err = new Alert(Alert.AlertType.ERROR);
-            err.setTitle("Σφάλμα Βάσης");
-            err.setHeaderText("Αποτυχία διαγραφής");
-            err.setContentText(e.getMessage());
-            err.showAndWait();
-            e.printStackTrace();
-        }
+        confirmAndDelete(selected);
     }
 
-    //~~~~~ NEW HANDLER ~~~~~
+    //~~~~~ NEW HANDLER ~~~~~                                                                                          .
     @FXML
     private void HandleEditNew(ActionEvent event) {
 
@@ -554,7 +610,7 @@ public class Controller implements Initializable {
         }
     }
 
-    //~~~~~ NEW HANDLER HELPERS ~~~~~
+    //~~~~~ NEW HANDLER HELPERS ~~~~~                                                                                  .
     private boolean matchesWildcard(String value, String filter, boolean ignoreCase) {
         if (filter == null || filter.isBlank()) {
             return true;
@@ -624,6 +680,291 @@ public class Controller implements Initializable {
         }
         return 1;
     }
+    //~~~~~ EDIT HANDLER ~~~~~                                                                                         .
+    private void openEditDialog(ProductListPopulator selected) {
+        if (selected == null) {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("Δεν επιλέχθηκε είδος");
+            alert.setHeaderText(null);
+            alert.setContentText("Παρακαλώ επίλεξε ένα είδος από τον πίνακα για επεξεργασία.");
+            alert.showAndWait();
+            return;
+        }
+
+        DBConnection connect = new DBConnection();
+        Connection connection = connect.getConnection();
+
+        List<String> allWarehouses;
+        Map<String, Integer> existingWarehouseStock;
+
+        try {
+            allWarehouses = loadWarehouses(connection);
+            existingWarehouseStock = loadWarehouseStockForProduct(connection, selected.getProductID());
+        } catch (SQLException e) {
+            new Alert(Alert.AlertType.ERROR, "Δεν μπόρεσα να φορτώσω τα στοιχεία του προϊόντος: " + e.getMessage()).showAndWait();
+            return;
+        }
+
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("Επεξεργασία προϊόντος");
+        dialog.setHeaderText("Επεξεργασία στοιχείων προϊόντος");
+        dialog.setResizable(true);
+
+        ButtonType saveBtn = new ButtonType("Αποθήκευση", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(saveBtn, ButtonType.CANCEL);
+
+        TextField tfProductId = new TextField(String.valueOf(selected.getProductID()));
+        tfProductId.setEditable(false);
+        tfProductId.setDisable(true);
+
+        TextField tfDescription = new TextField(selected.getProductDescription() != null ? selected.getProductDescription() : "");
+        TextField tfPurchase = new TextField(String.valueOf(selected.getPurchasedPrice()));
+        TextField tfSell = new TextField(String.valueOf(selected.getSellPrice()));
+        TextField tfWholesale = new TextField(String.valueOf(selected.getWholesalePrice()));
+        TextField tfPalletSize = new TextField(String.valueOf(selected.getPalletSize()));
+
+        VBox stockRowsBox = new VBox(8);
+        stockRowsBox.setFillWidth(true);
+
+        ScrollPane stockScroll = new ScrollPane(stockRowsBox);
+        stockScroll.setFitToWidth(true);
+        stockScroll.setFitToHeight(true);
+        stockScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+
+        Button btnAddRow = new Button("Προσθήκη αποθήκης");
+        btnAddRow.setOnAction(ae -> stockRowsBox.getChildren().add(createWarehouseStockRow(allWarehouses, stockRowsBox)));
+
+        if (existingWarehouseStock.isEmpty()) {
+            stockRowsBox.getChildren().add(createWarehouseStockRow(allWarehouses, stockRowsBox));
+        } else {
+            for (Map.Entry<String, Integer> entry : existingWarehouseStock.entrySet()) {
+                stockRowsBox.getChildren().add(
+                        createWarehouseStockRowWithValues(allWarehouses, stockRowsBox, entry.getKey(), entry.getValue())
+                );
+            }
+        }
+
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(15));
+
+        int r = 0;
+        grid.add(new Label("Product ID:"), 0, r);
+        grid.add(tfProductId, 1, r++);
+
+        grid.add(new Label("Περιγραφή:"), 0, r);
+        grid.add(tfDescription, 1, r++);
+
+        grid.add(new Label("Τιμή αγοράς:"), 0, r);
+        grid.add(tfPurchase, 1, r++);
+
+        grid.add(new Label("Τιμή λιανικής:"), 0, r);
+        grid.add(tfSell, 1, r++);
+
+        grid.add(new Label("Τιμή χονδρικής:"), 0, r);
+        grid.add(tfWholesale, 1, r++);
+
+        grid.add(new Label("Τεμ. ανά παλέτα:"), 0, r);
+        grid.add(tfPalletSize, 1, r++);
+
+        grid.add(new Separator(), 0, r++, 2, 1);
+
+        grid.add(new Label("Απόθεμα ανά αποθήκη:"), 0, r++, 2, 1);
+        grid.add(btnAddRow, 0, r++, 2, 1);
+        grid.add(stockScroll, 0, r, 2, 1);
+
+        GridPane.setVgrow(stockScroll, Priority.ALWAYS);
+        dialog.getDialogPane().setContent(grid);
+        dialog.getDialogPane().setPrefSize(350, 600);
+
+        ColumnConstraints col1 = new ColumnConstraints();
+        col1.setHalignment(HPos.CENTER);
+
+        ColumnConstraints col2 = new ColumnConstraints();
+        col2.setHgrow(Priority.ALWAYS);
+
+        grid.getColumnConstraints().addAll(col1, col2);
+
+        Optional<ButtonType> result = dialog.showAndWait();
+        if (result.isEmpty() || result.get() != saveBtn) return;
+
+        String description = tfDescription.getText().trim();
+        if (description.isBlank()) {
+            new Alert(Alert.AlertType.WARNING, "Η περιγραφή είναι υποχρεωτική.").showAndWait();
+            return;
+        }
+
+        float purchase, sell, wholesale;
+        int palletSize;
+
+        try {
+            purchase = Float.parseFloat(tfPurchase.getText().trim());
+            sell = Float.parseFloat(tfSell.getText().trim());
+            wholesale = Float.parseFloat(tfWholesale.getText().trim());
+            palletSize = Integer.parseInt(tfPalletSize.getText().trim());
+
+            if (palletSize <= 0) throw new NumberFormatException();
+        } catch (NumberFormatException ex) {
+            new Alert(Alert.AlertType.ERROR, "Λάθος τιμές αριθμών.").showAndWait();
+            return;
+        }
+
+        Map<String, Integer> warehouseStock = new LinkedHashMap<>();
+
+        for (var node : stockRowsBox.getChildren()) {
+            if (!(node instanceof HBox)) continue;
+            HBox row = (HBox) node;
+
+            @SuppressWarnings("unchecked")
+            ComboBox<String> cb = (ComboBox<String>) row.getChildren().get(0);
+            TextField tfStock = (TextField) row.getChildren().get(1);
+
+            String wh = cb.getValue();
+            String stockText = tfStock.getText().trim();
+
+            if ((wh == null || wh.isBlank()) && stockText.isBlank()) continue;
+
+            if (wh == null || wh.isBlank()) {
+                new Alert(Alert.AlertType.WARNING, "Διάλεξε αποθήκη σε όλες τις γραμμές.").showAndWait();
+                return;
+            }
+
+            int stock;
+            try {
+                stock = Integer.parseInt(stockText);
+                if (stock < 0) throw new NumberFormatException();
+            } catch (NumberFormatException ex) {
+                new Alert(Alert.AlertType.WARNING, "Το stock πρέπει να είναι ακέραιος αριθμός ≥ 0.").showAndWait();
+                return;
+            }
+
+            if (warehouseStock.containsKey(wh)) {
+                new Alert(Alert.AlertType.WARNING, "Η αποθήκη \"" + wh + "\" έχει δηλωθεί δύο φορές.").showAndWait();
+                return;
+            }
+
+            warehouseStock.put(wh, stock);
+        }
+
+        int productId = selected.getProductID();
+
+        try {
+            connection.setAutoCommit(false);
+
+            String updateProductSql =
+                    "UPDATE products SET ProductDescription = ?, PurchasedPrice = ?, SellPrice = ?, WholesalePrice = ?, PalletSize = ? " +
+                            "WHERE ProductID = ?";
+
+            try (PreparedStatement ps = connection.prepareStatement(updateProductSql)) {
+                ps.setString(1, description);
+                ps.setFloat(2, purchase);
+                ps.setFloat(3, sell);
+                ps.setFloat(4, wholesale);
+                ps.setInt(5, palletSize);
+                ps.setInt(6, productId);
+                ps.executeUpdate();
+            }
+
+            String deleteLinksSql = "DELETE FROM prod_warehouse_link WHERE PRODUCT = ?";
+            try (PreparedStatement ps = connection.prepareStatement(deleteLinksSql)) {
+                ps.setInt(1, productId);
+                ps.executeUpdate();
+            }
+
+            if (!warehouseStock.isEmpty()) {
+                String insertLinkSql = "INSERT INTO prod_warehouse_link (PRODUCT, WAREHOUSE, STOCK) VALUES (?, ?, ?)";
+                try (PreparedStatement ps = connection.prepareStatement(insertLinkSql)) {
+                    for (Map.Entry<String, Integer> entry : warehouseStock.entrySet()) {
+                        ps.setInt(1, productId);
+                        ps.setString(2, entry.getKey());
+                        ps.setInt(3, entry.getValue());
+                        ps.addBatch();
+                    }
+                    ps.executeBatch();
+                }
+            }
+
+            connection.commit();
+
+            int totalStock = warehouseStock.values().stream().mapToInt(Integer::intValue).sum();
+            int totalPallets = warehouseStock.values().stream().mapToInt(s -> s / palletSize).sum();
+            int outOfPallet = warehouseStock.values().stream().mapToInt(s -> s % palletSize).sum();
+
+            String warehousesStr = warehouseStock.entrySet().stream()
+                    .filter(e -> e.getValue() != null && e.getValue() > 0)
+                    .map(Map.Entry::getKey)
+                    .sorted()
+                    .reduce((a, b) -> a + "," + b)
+                    .orElse(null);
+
+            selected.setProductDescription(description);
+            selected.setPurchasedPrice(purchase);
+            selected.setSellPrice(sell);
+            selected.setWholesalePrice(wholesale);
+            selected.setWarehouses(warehousesStr);
+            selected.setTotalStock(totalStock);
+            selected.setTotalPallets(totalPallets);
+            selected.setOutOfPallet(outOfPallet);
+            selected.setPalletSize(palletSize);
+
+            ProductTableView.refresh();
+
+            new Alert(Alert.AlertType.INFORMATION, "Το προϊόν ενημερώθηκε επιτυχώς.").showAndWait();
+
+        } catch (SQLException e) {
+            try { connection.rollback(); } catch (SQLException ignored) {}
+            new Alert(Alert.AlertType.ERROR, "Σφάλμα βάσης: " + e.getMessage()).showAndWait();
+            e.printStackTrace();
+        } finally {
+            try { connection.setAutoCommit(true); } catch (SQLException ignored) {}
+        }
+    }
+
+    @FXML
+    private void HandleEditEdit(ActionEvent event) {
+        ProductListPopulator selected = ProductTableView.getSelectionModel().getSelectedItem();
+        openEditDialog(selected);
+    }
+
+    //~~~~~ EDIT HADLER HELPERS ~~~~~                                                                                  .
+    private Map<String, Integer> loadWarehouseStockForProduct(Connection connection, int productId) throws SQLException {
+        String sql = "SELECT WAREHOUSE, STOCK FROM prod_warehouse_link WHERE PRODUCT = ? ORDER BY WAREHOUSE";
+        Map<String, Integer> result = new LinkedHashMap<>();
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, productId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    String warehouse = rs.getString("WAREHOUSE");
+                    int stock = rs.getInt("STOCK");
+                    result.put(warehouse, stock);
+                }
+            }
+        }
+
+        return result;
+    }
+
+    private HBox createWarehouseStockRowWithValues(List<String> warehouses, VBox container, String selectedWarehouse, int stockValue) {
+        ComboBox<String> cbWarehouse = new ComboBox<>();
+        cbWarehouse.getItems().addAll(warehouses);
+        cbWarehouse.setPrefWidth(180);
+        cbWarehouse.setValue(selectedWarehouse);
+
+        TextField tfStock = new TextField(String.valueOf(stockValue));
+        tfStock.setPromptText("Stock");
+        tfStock.setPrefWidth(90);
+
+        Button btnRemove = new Button("-");
+        btnRemove.setOnAction(e -> container.getChildren().remove(btnRemove.getParent()));
+
+        return new HBox(8, cbWarehouse, tfStock, btnRemove);
+    }
+
+
+
 
 
 
