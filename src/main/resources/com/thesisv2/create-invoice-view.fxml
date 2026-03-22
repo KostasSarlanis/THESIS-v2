@@ -1,14 +1,239 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.util.*?>
-<?import javafx.scene.*?>
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
 
-<AnchorPane xmlns="http://javafx.com/javafx"
-            xmlns:fx="http://javafx.com/fxml"
-            fx:controller="com.thesisv2.CreateInvoiceController"
-            prefHeight="400.0" prefWidth="600.0">
+<SplitPane fx:id="SplitPaneControll"
+           xmlns="http://javafx.com/javafx/21"
+           xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="com.thesisv2.CreateInvoiceController"
+           dividerPositions="0.33">
 
-</AnchorPane>
+    <items>
+
+        <ScrollPane fitToWidth="true" hbarPolicy="NEVER">
+            <content>
+                <VBox spacing="12.0" style="-fx-background-color: #eeeeee;">
+                    <children>
+
+                        <VBox spacing="6.0">
+                            <padding>
+                                <Insets top="10.0" left="10.0" right="10.0"/>
+                            </padding>
+                            <children>
+                                <Label text="Στοιχεία παραστατικού">
+                                    <font>
+                                        <Font name="System Bold" size="16.0"/>
+                                    </font>
+                                </Label>
+
+                                <GridPane hgap="8.0" vgap="8.0">
+                                    <children>
+                                        <Label text="Αριθμός:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                                        <TextField fx:id="InvoiceIdField" editable="false" focusTraversable="false"
+                                                   style="-fx-opacity: 1; -fx-background-color: #f4f4f4;"
+                                                   promptText="Θα δημιουργηθεί αυτόματα" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+                                        <Label text="Τύπος:" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                                        <ComboBox fx:id="InvoiceTypeCombo" prefWidth="180.0"
+                                                  GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+
+                                        <Label text="Κατάσταση:" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+                                        <ComboBox fx:id="InvoiceStatusCombo" prefWidth="180.0"
+                                                  GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+
+                                        <Label text="Ημ/νία έκδοσης:" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+                                        <DatePicker fx:id="IssueDatePicker"
+                                                    GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+
+                                        <Label text="Ημ/νία λήξης:" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+                                        <DatePicker fx:id="DueDatePicker"
+                                                    GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+
+                                        <Label text="Νόμισμα:" GridPane.rowIndex="5" GridPane.columnIndex="0"/>
+                                        <ComboBox fx:id="CurrencyCombo" prefWidth="180.0"
+                                                  GridPane.rowIndex="5" GridPane.columnIndex="1"/>
+
+                                        <Label text="Γλώσσα:" GridPane.rowIndex="6" GridPane.columnIndex="0"/>
+                                        <ComboBox fx:id="LanguageCombo" prefWidth="180.0"
+                                                  GridPane.rowIndex="6" GridPane.columnIndex="1"/>
+                                    </children>
+                                </GridPane>
+                            </children>
+                        </VBox>
+
+                        <Separator/>
+
+                        <VBox spacing="6.0">
+                            <padding>
+                                <Insets left="10.0" right="10.0"/>
+                            </padding>
+                            <children>
+                                <Label text="Στοιχεία εκδότη">
+                                    <font>
+                                        <Font name="System Bold" size="16.0"/>
+                                    </font>
+                                </Label>
+
+                                <TextField fx:id="SellerNameField" editable="false" promptText="Επωνυμία / Ονοματεπώνυμο"/>
+                                <TextField fx:id="SellerAddressField" editable="false" promptText="Διεύθυνση"/>
+                                <TextField fx:id="SellerCityField" editable="false" promptText="Πόλη"/>
+                                <TextField fx:id="SellerPostalCodeField" editable="false" promptText="Ταχυδρομικός κώδικας"/>
+                                <TextField fx:id="SellerCountryField" editable="false" promptText="Χώρα"/>
+                                <TextField fx:id="SellerTaxIdField" editable="false" promptText="ΑΦΜ / Tax ID / VAT Number"/>
+                                <TextField fx:id="SellerEmailField" editable="false" promptText="Email"/>
+                                <TextField fx:id="SellerPhoneField" editable="false" promptText="Τηλέφωνο"/>
+                            </children>
+                        </VBox>
+
+                        <Separator/>
+
+                        <VBox spacing="6.0">
+                            <padding>
+                                <Insets left="10.0" right="10.0"/>
+                            </padding>
+                            <children>
+                                <Label text="Στοιχεία πελάτη">
+                                    <font>
+                                        <Font name="System Bold" size="16.0"/>
+                                    </font>
+                                </Label>
+
+                                <TextField fx:id="CustomerNameField" promptText="Επωνυμία / Ονοματεπώνυμο"/>
+                                <TextField fx:id="CustomerAddressField" promptText="Διεύθυνση"/>
+                                <TextField fx:id="CustomerCityField" promptText="Πόλη"/>
+                                <TextField fx:id="CustomerPostalCodeField" promptText="Ταχυδρομικός κώδικας"/>
+                                <TextField fx:id="CustomerCountryField" promptText="Χώρα"/>
+                                <TextField fx:id="CustomerTaxIdField" promptText="ΑΦΜ / Tax ID / VAT Number"/>
+                                <TextField fx:id="CustomerEmailField" promptText="Email"/>
+                                <TextField fx:id="CustomerPhoneField" promptText="Τηλέφωνο"/>
+                            </children>
+                        </VBox>
+
+                        <Separator/>
+
+                        <VBox spacing="6.0">
+                            <padding>
+                                <Insets left="10.0" right="10.0" bottom="10.0"/>
+                            </padding>
+                            <children>
+                                <Label text="Σημειώσεις / Όροι πληρωμής">
+                                    <font>
+                                        <Font name="System Bold" size="16.0"/>
+                                    </font>
+                                </Label>
+
+                                <TextArea fx:id="NotesArea" prefRowCount="4" promptText="Σημειώσεις"/>
+                                <TextArea fx:id="PaymentTermsArea" prefRowCount="3" promptText="Όροι πληρωμής"/>
+                            </children>
+                        </VBox>
+
+                    </children>
+                </VBox>
+            </content>
+        </ScrollPane>
+
+        <VBox spacing="10.0">
+            <children>
+
+                <HBox alignment="CENTER_LEFT" spacing="10.0">
+                    <children>
+                        <Label text="Δημιουργία παραστατικού">
+                            <font>
+                                <Font name="System Bold" size="16.0"/>
+                            </font>
+                        </Label>
+
+                        <Label fx:id="HeaderInfoLabel" text="Γραμμές: 0"/>
+                    </children>
+                    <padding>
+                        <Insets left="10.0" right="10.0" top="10.0"/>
+                    </padding>
+                </HBox>
+
+                <HBox spacing="8.0">
+                    <children>
+                        <Button fx:id="AddLineButton" mnemonicParsing="false" onAction="#handleAddLine" text="Προσθήκη γραμμής"/>
+                        <Button fx:id="PickProductButton" mnemonicParsing="false" onAction="#handlePickProduct" text="Επιλογή προϊόντος"/>
+                        <Button fx:id="RemoveLineButton" mnemonicParsing="false" onAction="#handleRemoveSelectedLine" text="Διαγραφή επιλεγμένης"/>
+                        <Button fx:id="SaveButton" mnemonicParsing="false" onAction="#handleSaveInvoice" text="Αποθήκευση"/>
+                        <Button fx:id="SavePdfButton" mnemonicParsing="false" onAction="#handleSavePdf" text="Αποθήκευση PDF"/>
+                        <Button fx:id="PrintButton" mnemonicParsing="false" onAction="#handlePrintInvoice" text="Εκτύπωση"/>
+                        <Button fx:id="ClearButton" mnemonicParsing="false" onAction="#handleClearAll" text="Καθαρισμός όλων"/>
+                    </children>
+                    <padding>
+                        <Insets left="10.0" right="10.0"/>
+                    </padding>
+                </HBox>
+
+                <TableView fx:id="InvoiceLinesTable" VBox.vgrow="ALWAYS" editable="true">
+                    <columns>
+                        <TableColumn fx:id="ColLineNo" prefWidth="55.0" text="Α/Α"/>
+                        <TableColumn fx:id="ColItemCode" prefWidth="95.0" text="Κωδικός"/>
+                        <TableColumn fx:id="ColDescription" prefWidth="220.0" text="Περιγραφή"/>
+                        <TableColumn fx:id="ColQuantity" prefWidth="85.0" text="Ποσότητα"/>
+                        <TableColumn fx:id="ColUnit" prefWidth="70.0" text="Μον."/>
+                        <TableColumn fx:id="ColUnitPrice" prefWidth="90.0" text="Τιμή"/>
+                        <TableColumn fx:id="ColDiscount" prefWidth="80.0" text="Έκπτ. %"/>
+                        <TableColumn fx:id="ColTax" prefWidth="80.0" text="ΦΠΑ %"/>
+                        <TableColumn fx:id="ColLineTotal" prefWidth="110.0" text="Σύνολο"/>
+                    </columns>
+                </TableView>
+
+                <HBox spacing="20.0">
+                    <children>
+                        <VBox spacing="6.0">
+                            <children>
+                                <Label text="Υποσύνολο"/>
+                                <TextField fx:id="SubtotalField" editable="false"/>
+                            </children>
+                        </VBox>
+
+                        <VBox spacing="6.0">
+                            <children>
+                                <Label text="Συνολική έκπτωση %"/>
+                                <TextField fx:id="OverallDiscountPercentField" promptText="0"/>
+                            </children>
+                        </VBox>
+
+                        <VBox spacing="6.0">
+                            <children>
+                                <Label text="Σύνολο έκπτωσης"/>
+                                <TextField fx:id="DiscountTotalField" editable="false"/>
+                            </children>
+                        </VBox>
+
+                        <VBox spacing="6.0">
+                            <children>
+                                <Label text="Σύνολο φόρου"/>
+                                <TextField fx:id="TaxTotalField" editable="false"/>
+                            </children>
+                        </VBox>
+
+                        <VBox spacing="6.0">
+                            <children>
+                                <Label text="Γενικό σύνολο">
+                                    <font>
+                                        <Font name="System Bold" size="13.0"/>
+                                    </font>
+                                </Label>
+                                <TextField fx:id="GrandTotalField" editable="false"/>
+                            </children>
+                        </VBox>
+                    </children>
+                    <padding>
+                        <Insets left="10.0" right="10.0" bottom="10.0"/>
+                    </padding>
+                </HBox>
+
+            </children>
+
+            <padding>
+                <Insets top="10.0" left="10.0" right="10.0" bottom="10.0"/>
+            </padding>
+        </VBox>
+
+    </items>
+</SplitPane>

@@ -111,11 +111,22 @@ public class ProductListController implements Initializable {
             contextMenu.getItems().addAll(editItem, deleteItem);
 
             row.contextMenuProperty().bind(
-                    Bindings.when(row.emptyProperty())
+                    Bindings.when(row.emptyProperty().or(Bindings.createBooleanBinding(()->selectionMode)))
                             .then((ContextMenu) null)
                             .otherwise(contextMenu)
             );
 
+            //~~~~~double click for invoice prick mode~~~~~
+            row.setOnMouseClicked(event -> {
+                if (!row.isEmpty() && event.getClickCount() == 2) {
+                    ProductListPopulator selectedProduct = row.getItem();
+
+                    if (selectionMode && onProductSelected != null) {
+                        onProductSelected.accept(selectedProduct);
+                        row.getScene().getWindow().hide();
+                    }
+                }
+            });
             return row;
         });
     }
@@ -313,8 +324,22 @@ public class ProductListController implements Initializable {
             }
 
             if (!warehouseFilter.isBlank()) {
-                String warehouse = product.getWarehouses();
-                if (!matchesWildcard(warehouse, warehouseFilter, true)) {
+                String warehouses = product.getWarehouses();
+                if (warehouses == null || warehouses.isBlank()) {
+                    return false;
+                }
+
+                boolean exactWarehouseMatch = false;
+                String[] warehouseParts = warehouses.split(",");
+
+                for (String part : warehouseParts) {
+                    if (part.trim().equalsIgnoreCase(warehouseFilter)) {
+                        exactWarehouseMatch = true;
+                        break;
+                    }
+                }
+
+                if (!exactWarehouseMatch) {
                     return false;
                 }
             }
@@ -999,7 +1024,22 @@ public class ProductListController implements Initializable {
 
 
 
+//~~~~~To load warehouses with filter pre applied~~~~~                                                                 .
+    public void openWithWarehouseFilter(String warehouseId) {
+        SearchWarehouse.setText(warehouseId);
+    }
 
+//~~~~~Invoice pick helpers~~~~~                                                                                       .
+private boolean selectionMode = false;
+    private java.util.function.Consumer<ProductListPopulator> onProductSelected;
+
+    public void setSelectionMode(boolean selectionMode) {
+        this.selectionMode = selectionMode;
+    }
+
+    public void setOnProductSelected(java.util.function.Consumer<ProductListPopulator> onProductSelected) {
+        this.onProductSelected = onProductSelected;
+    }
 
 
 

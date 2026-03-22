@@ -14,6 +14,7 @@ module com.example.thesisv2 {
     requires jdk.jdi;
     requires javafx.base;
     requires javafx.graphics;
+    requires com.github.librepdf.openpdf;
 
     opens com.thesisv2 to javafx.fxml;
     exports com.thesisv2;

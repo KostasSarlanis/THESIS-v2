@@ -1,22 +1,115 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
 
-<SplitPane xmlns:fx="http://javafx.com/fxml"
-           fx:controller="com.thesisv2.WarehouseListController">
+<SplitPane fx:id="SplitPaneControll"
+           xmlns="http://javafx.com/javafx/21"
+           xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="com.thesisv2.WarehouseListController"
+           dividerPositions="0.12">
 
     <items>
-        <AnchorPane>
+        <VBox prefWidth="220.0" style="-fx-background-color: #eeeeee;">
             <children>
-                <Label layoutX="20" layoutY="20" text="Left side of second view" />
-            </children>
-        </AnchorPane>
+                <Label text="Κωδικός">
+                    <VBox.margin>
+                        <Insets top="20.0"/>
+                    </VBox.margin>
+                    <font>
+                        <Font name="System Bold" size="13.0"/>
+                    </font>
+                </Label>
 
-        <AnchorPane>
-            <children>
-                <Label layoutX="20" layoutY="20" text="Right side of second view" />
+                <TextField fx:id="SearchWarehouseID" promptText="Αναζήτηση κωδικού">
+                    <VBox.margin>
+                        <Insets left="10.0" right="10.0" top="5.0"/>
+                    </VBox.margin>
+                </TextField>
+
+                <Label text="Διεύθυνση">
+                    <VBox.margin>
+                        <Insets top="15.0"/>
+                    </VBox.margin>
+                    <font>
+                        <Font name="System Bold" size="13.0"/>
+                    </font>
+                </Label>
+
+                <TextField fx:id="SearchAddress" promptText="Αναζήτηση διεύθυνσης">
+                    <VBox.margin>
+                        <Insets left="10.0" right="10.0" top="5.0"/>
+                    </VBox.margin>
+                </TextField>
+
+                <Label text="Πόλη">
+                    <VBox.margin>
+                        <Insets top="15.0"/>
+                    </VBox.margin>
+                    <font>
+                        <Font name="System Bold" size="13.0"/>
+                    </font>
+                </Label>
+
+                <TextField fx:id="SearchCity" promptText="Αναζήτηση πόλης">
+                    <VBox.margin>
+                        <Insets left="10.0" right="10.0" top="5.0"/>
+                    </VBox.margin>
+                </TextField>
+
+                <Label text="Χώρα">
+                    <VBox.margin>
+                        <Insets top="15.0"/>
+                    </VBox.margin>
+                    <font>
+                        <Font name="System Bold" size="13.0"/>
+                    </font>
+                </Label>
+
+                <TextField fx:id="SearchCountry" promptText="Αναζήτηση χώρας">
+                    <VBox.margin>
+                        <Insets left="10.0" right="10.0" top="5.0"/>
+                    </VBox.margin>
+                </TextField>
             </children>
-        </AnchorPane>
+        </VBox>
+
+        <VBox spacing="6.0">
+            <children>
+                <HBox alignment="CENTER_LEFT" spacing="10.0">
+                    <children>
+                        <Label text="Λίστα αποθηκών">
+                            <font>
+                                <Font name="System Bold" size="16.0"/>
+                            </font>
+                        </Label>
+
+                        <Label fx:id="ResultLabel" text="Αποτελέσματα: 0"/>
+                    </children>
+                    <padding>
+                        <Insets left="10.0" right="10.0" top="10.0"/>
+                    </padding>
+                </HBox>
+
+                <TableView fx:id="WarehouseTableView" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="ColumnWarehouseID" prefWidth="110.0" text="Κωδικός"/>
+                        <TableColumn fx:id="ColumnAddress" prefWidth="280.0" text="Διεύθυνση"/>
+                        <TableColumn fx:id="ColumnCity" prefWidth="180.0" text="Πόλη"/>
+                        <TableColumn fx:id="ColumnCountry" prefWidth="180.0" text="Χώρα"/>
+                    </columns>
+                </TableView>
+            </children>
+            <padding>
+                <Insets bottom="10.0" left="10.0" right="10.0" top="10.0"/>
+            </padding>
+        </VBox>
     </items>
 </SplitPane>
