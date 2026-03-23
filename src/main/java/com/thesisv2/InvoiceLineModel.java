@@ -1,6 +1,8 @@
 package com.thesisv2;
 
 import javafx.beans.property.*;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 
 public class InvoiceLineModel {
 
@@ -13,6 +15,7 @@ public class InvoiceLineModel {
     private final DoubleProperty discountPercent = new SimpleDoubleProperty(0.0);
     private final DoubleProperty taxPercent = new SimpleDoubleProperty(24.0);
     private final DoubleProperty lineTotal = new SimpleDoubleProperty(0.0);
+    private final BooleanProperty insufficientStock = new SimpleBooleanProperty(false);
 
     public InvoiceLineModel() {
         recalculateLineTotal();
@@ -74,4 +77,9 @@ public class InvoiceLineModel {
     public double getLineTotal() { return lineTotal.get(); }
     public void setLineTotal(double value) { lineTotal.set(value); }
     public DoubleProperty lineTotalProperty() { return lineTotal; }
+
+    public boolean isInsufficientStock() { return insufficientStock.get(); }
+    public void setInsufficientStock(boolean value) { insufficientStock.set(value); }
+    public BooleanProperty insufficientStockProperty() { return insufficientStock; }
+
 }

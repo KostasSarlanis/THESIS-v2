@@ -77,6 +77,7 @@ public class CreateInvoiceController implements Initializable {
     @FXML private TextField TaxTotalField;
     @FXML private TextField GrandTotalField;
     @FXML private TextField OverallDiscountPercentField;
+    @FXML private ComboBox<Integer> WarehouseCombo;
 
     private final ObservableList<InvoiceLineModel> invoiceLines = FXCollections.observableArrayList();
 
@@ -90,6 +91,7 @@ public class CreateInvoiceController implements Initializable {
         });
 
         setupCombos();
+        loadWarehouses();
         setupTable();
         setDefaults();
         setFixedSellerDetails();
@@ -121,6 +123,10 @@ public class CreateInvoiceController implements Initializable {
         CurrencyCombo.setValue("EUR");
         LanguageCombo.setValue("el-GR");
         OverallDiscountPercentField.setText("0");
+
+        if (WarehouseCombo != null && !WarehouseCombo.getItems().isEmpty()) {
+            WarehouseCombo.setValue(WarehouseCombo.getItems().get(0));
+        }
 
         invoiceLines.clear();
         ensureExtraEmptyLine();
@@ -231,7 +237,23 @@ public class CreateInvoiceController implements Initializable {
             refreshTableAndTotals();
         });
 
+        InvoiceLinesTable.setRowFactory(tv -> new TableRow<>() {
+            @Override
+            protected void updateItem(InvoiceLineModel item, boolean empty) {
+                super.updateItem(item, empty);
+
+                if (empty || item == null) {
+                    setStyle("");
+                } else if (item.isInsufficientStock()) {
+                    setStyle("-fx-background-color: #ffdddd; -fx-font-weight: bold;");
+                } else {
+                    setStyle("");
+                }
+            }
+        });
+
         InvoiceLinesTable.setItems(invoiceLines);
+
     }
 
     private Double parseFlexibleDouble(String text) {
@@ -312,16 +334,21 @@ public class CreateInvoiceController implements Initializable {
             connection = connect.getConnection();
             connection.setAutoCommit(false);
 
+            if (!validateStockForSelectedWarehouse(connection)){
+                connection.rollback();
+                return;
+            }
+
             String insertHeaderSql = """
             INSERT INTO invoice_header (
                 invoice_type, invoice_status, issue_date, due_date, currency_code, language_code,
                 seller_name, seller_address, seller_city, seller_postal_code, seller_country, seller_tax_id, seller_email, seller_phone,
                 customer_name, customer_address, customer_city, customer_postal_code, customer_country, customer_tax_id, customer_email, customer_phone,
-                subtotal, overall_discount_percent, discount_total, tax_total, grand_total, notes, payment_terms
+                subtotal, overall_discount_percent, discount_total, tax_total, grand_total, notes, payment_terms, source_warehouse
             ) VALUES (?, ?, ?, ?, ?, ?,
                       ?, ?, ?, ?, ?, ?, ?, ?,
                       ?, ?, ?, ?, ?, ?, ?, ?,
-                      ?, ?, ?, ?, ?, ?, ?)
+                      ?, ?, ?, ?, ?, ?, ?, ?)
             """;
 
             PreparedStatement headerStmt = connection.prepareStatement(insertHeaderSql, Statement.RETURN_GENERATED_KEYS);
@@ -364,6 +391,7 @@ public class CreateInvoiceController implements Initializable {
             headerStmt.setBigDecimal(27, bd(GrandTotalField.getText()));
             headerStmt.setString(28, NotesArea.getText());
             headerStmt.setString(29, PaymentTermsArea.getText());
+            headerStmt.setString(30, String.valueOf(WarehouseCombo.getValue()));
 
             headerStmt.executeUpdate();
 
@@ -385,6 +413,7 @@ public class CreateInvoiceController implements Initializable {
             PreparedStatement lineStmt = connection.prepareStatement(insertLineSql);
 
             int actualLineNo = 1;
+            int selectedWarehouse = WarehouseCombo.getValue();
 
             for (InvoiceLineModel line : invoiceLines) {
                 if (isLineEmpty(line)) {
@@ -404,6 +433,12 @@ public class CreateInvoiceController implements Initializable {
                 lineStmt.setBigDecimal(9, bd(line.getTaxPercent()));
                 lineStmt.setBigDecimal(10, bd(line.getLineTotal()));
                 lineStmt.addBatch();
+
+                if (line.getItemCode() != null
+                        && !line.getItemCode().isBlank()
+                        && !"0".equals(line.getItemCode())) {
+                    reduceStock(connection, line.getItemCode(), selectedWarehouse, line.getQuantity());
+                }
             }
 
             lineStmt.executeBatch();
@@ -499,6 +534,7 @@ public class CreateInvoiceController implements Initializable {
                     IssueDatePicker.getValue(),
                     DueDatePicker.getValue(),
                     CurrencyCombo.getValue(),
+                    WarehouseCombo.getValue(),
 
                     SellerNameField.getText(), SellerAddressField.getText(), SellerCityField.getText(),
                     SellerPostalCodeField.getText(), SellerCountryField.getText(), SellerTaxIdField.getText(),
@@ -563,6 +599,7 @@ public class CreateInvoiceController implements Initializable {
 
         Label number = new Label("Αριθμός: " + (InvoiceIdField.getText().isBlank() ? "000000" : InvoiceIdField.getText()));
         Label issue = new Label("Ημερομηνία: " + IssueDatePicker.getValue());
+        Label warehouse = new Label("Αποθήκη: " + WarehouseCombo.getValue());
         Label customer = new Label("Πελάτης: " + CustomerNameField.getText());
         Label seller = new Label("Εκδότης: " + SellerNameField.getText());
         Label subtotal = new Label("Υποσύνολο: " + SubtotalField.getText() + " " + CurrencyCombo.getValue());
@@ -584,6 +621,8 @@ public class CreateInvoiceController implements Initializable {
 
         int row = 1;
         for (InvoiceLineModel line : invoiceLines) {
+            if (isLineEmpty(line)) { continue; }
+
             linesGrid.add(new Label(String.valueOf(line.getLineNo())), 0, row);
             linesGrid.add(new Label(line.getDescription()), 1, row);
             linesGrid.add(new Label(formatNumber(line.getQuantity())), 2, row);
@@ -593,7 +632,7 @@ public class CreateInvoiceController implements Initializable {
         }
 
         root.getChildren().addAll(
-                title, number, issue, seller, customer,
+                title, number, issue, warehouse, seller, customer,
                 new Separator(),
                 linesGrid,
                 new Separator(),
@@ -607,6 +646,10 @@ public class CreateInvoiceController implements Initializable {
     }
 
     private boolean validateBeforeSave() {
+        if (!validateWarehouseSelected()) {
+            return false;
+        }
+
         if (SellerNameField.getText().isBlank()) {
             showWarning("Έλεγχος", "Το πεδίο εκδότη είναι υποχρεωτικό.");
             return false;
@@ -655,6 +698,9 @@ public class CreateInvoiceController implements Initializable {
     }
 
     private boolean validateBeforeExport() {
+        if (!validateWarehouseSelected()){
+            return false;
+        }
         boolean hasAtLeastOneRealLine = false;
 
         for (InvoiceLineModel line : invoiceLines) {
@@ -740,7 +786,8 @@ public class CreateInvoiceController implements Initializable {
     }
 
     private void updateHeaderInfo() {
-        HeaderInfoLabel.setText("Γραμμές: " + invoiceLines.size());
+        long realLines = invoiceLines.stream().filter(line -> !isLineEmpty(line)).count();
+        HeaderInfoLabel.setText("Γραμμές: " + realLines);
     }
 
     private void resequenceLines() {
@@ -918,6 +965,134 @@ public class CreateInvoiceController implements Initializable {
             return 0.0;
         }
     }
+
+    private void loadWarehouses() {
+        String sql = """
+        SELECT DISTINCT WAREHOUSE
+        FROM prod_warehouse_link
+        WHERE WAREHOUSE IS NOT NULL
+          AND TRIM(WAREHOUSE) <> ''
+        ORDER BY WAREHOUSE
+    """;
+
+        try {
+            DBConnection connect = new DBConnection();
+            try (Connection connection = connect.getConnection();
+                 PreparedStatement stmt = connection.prepareStatement(sql);
+                 ResultSet rs = stmt.executeQuery()) {
+
+                ObservableList<Integer> warehouses = FXCollections.observableArrayList();
+
+                while (rs.next()) {
+                    warehouses.add(rs.getInt("WAREHOUSE"));
+                }
+
+                WarehouseCombo.setItems(warehouses);
+
+                if (!warehouses.isEmpty()) {
+                    WarehouseCombo.setValue(warehouses.get(0));
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            showError("Αποθήκες", "Δεν ήταν δυνατή η φόρτωση των αποθηκών.");
+        }
+    }
+
+    private boolean validateWarehouseSelected() {
+        if (WarehouseCombo.getValue() == null) {
+            showWarning("Αποθήκη", "Επίλεξε αποθήκη.");
+            return false;
+        }
+        return true;
+    }
+
+    private double getAvailableStock(Connection connection, String itemCode, int warehouse) throws SQLException {
+        String sql = """
+        SELECT COALESCE(STOCK, 0)
+        FROM prod_warehouse_link
+        WHERE PRODUCT = ? AND WAREHOUSE = ?
+    """;
+
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setInt(1, Integer.parseInt(itemCode));
+            stmt.setInt(2, warehouse);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getDouble(1);
+                }
+            }
+        }
+
+        return 0.0;
+    }
+
+    private void reduceStock(Connection connection, String itemCode, int warehouse, double quantity) throws SQLException {
+        String sql = """
+        UPDATE prod_warehouse_link
+        SET STOCK = STOCK - ?
+        WHERE PRODUCT = ? AND WAREHOUSE = ? AND STOCK >= ?
+    """;
+
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setDouble(1, quantity);
+            stmt.setInt(2, Integer.parseInt(itemCode));
+            stmt.setInt(3, warehouse);
+            stmt.setDouble(4, quantity);
+
+            int updatedRows = stmt.executeUpdate();
+
+            if (updatedRows == 0) {
+                throw new SQLException("Ανεπαρκές απόθεμα για προϊόν " + itemCode + " στην αποθήκη " + warehouse + ".");
+            }
+        }
+    }
+
+    private boolean validateStockForSelectedWarehouse(Connection connection) throws SQLException {
+        Integer warehouse = WarehouseCombo.getValue();
+
+        if (warehouse == null) {
+            showWarning("Αποθήκη", "Επίλεξε αποθήκη.");
+            return false;
+        }
+
+        boolean ok = true;
+
+        for (InvoiceLineModel line : invoiceLines) {
+            line.setInsufficientStock(false);
+
+            if (isLineEmpty(line)) {
+                continue;
+            }
+
+            if (line.getItemCode() == null || line.getItemCode().isBlank()) {
+                continue;
+            }
+
+            if ("0".equals(line.getItemCode())) {
+                continue;
+            }
+
+            double available = getAvailableStock(connection, line.getItemCode(), warehouse);
+            double requested = line.getQuantity();
+
+            if (requested > available) {
+                line.setInsufficientStock(true);
+                ok = false;
+            }
+        }
+
+        InvoiceLinesTable.refresh();
+
+        if (!ok) {
+            showWarning("Απόθεμα", "Υπάρχουν γραμμές με ανεπαρκές απόθεμα στην επιλεγμένη αποθήκη.");
+        }
+
+        return ok;
+    }
+
+
 
 
 

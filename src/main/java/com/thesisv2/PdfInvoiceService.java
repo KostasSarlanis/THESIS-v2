@@ -21,6 +21,7 @@ public class PdfInvoiceService {
             LocalDate issueDate,
             LocalDate dueDate,
             String currencyCode,
+            Integer warehouse,
 
             String sellerName, String sellerAddress, String sellerCity,
             String sellerPostalCode, String sellerCountry, String sellerTaxId,
@@ -59,6 +60,8 @@ public class PdfInvoiceService {
         document.add(new Paragraph("Issue Date: " + issueDate, normalFont));
         document.add(new Paragraph("Due Date: " + dueDate, normalFont));
         document.add(new Paragraph("Currency: " + currencyCode, normalFont));
+
+        document.add(new Paragraph("Αποθήκη: " + (warehouse == null ? "-" : warehouse)));
 
         document.add(new Paragraph(" "));
         document.add(new Paragraph("Seller / Εκδότης", sectionFont));
@@ -100,6 +103,7 @@ public class PdfInvoiceService {
         document.add(new Paragraph(" "));
         document.add(new Paragraph("Υποσύνολο / Subtotal: " + subtotal + " " + currencyCode, normalFont));
         document.add(new Paragraph("Συνολική έκπτωση % / Overall Discount %: " + nullSafe(overallDiscountPercent), normalFont));
+        document.add(new Paragraph("Σύνολο έκπτωσης / Discount Total: " + discountTotal + " " + currencyCode, normalFont));
         document.add(new Paragraph("Σύνολο έκπτωσης / Discount Total: " + discountTotal + " " + currencyCode, normalFont));
         document.add(new Paragraph("Σύνολο φόρου / Tax Total: " + taxTotal + " " + currencyCode, normalFont));
         document.add(new Paragraph("Γενικό σύνολο / Grand Total: " + grandTotal + " " + currencyCode, sectionFont));

@@ -44,21 +44,28 @@
                                         <ComboBox fx:id="InvoiceStatusCombo" prefWidth="180.0"
                                                   GridPane.rowIndex="2" GridPane.columnIndex="1"/>
 
-                                        <Label text="Ημ/νία έκδοσης:" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
-                                        <DatePicker fx:id="IssueDatePicker"
-                                                    GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+                                        <Label text="Αποθήκη:" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
 
-                                        <Label text="Ημ/νία λήξης:" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
-                                        <DatePicker fx:id="DueDatePicker"
+                                        <ComboBox fx:id="WarehouseCombo"
+                                                  prefWidth="180.0"
+                                                  GridPane.rowIndex="3"
+                                                  GridPane.columnIndex="1"/>
+
+                                        <Label text="Ημ/νία έκδοσης:" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+                                        <DatePicker fx:id="IssueDatePicker"
                                                     GridPane.rowIndex="4" GridPane.columnIndex="1"/>
 
-                                        <Label text="Νόμισμα:" GridPane.rowIndex="5" GridPane.columnIndex="0"/>
-                                        <ComboBox fx:id="CurrencyCombo" prefWidth="180.0"
-                                                  GridPane.rowIndex="5" GridPane.columnIndex="1"/>
+                                        <Label text="Ημ/νία λήξης:" GridPane.rowIndex="5" GridPane.columnIndex="0"/>
+                                        <DatePicker fx:id="DueDatePicker"
+                                                    GridPane.rowIndex="5" GridPane.columnIndex="1"/>
 
-                                        <Label text="Γλώσσα:" GridPane.rowIndex="6" GridPane.columnIndex="0"/>
-                                        <ComboBox fx:id="LanguageCombo" prefWidth="180.0"
+                                        <Label text="Νόμισμα:" GridPane.rowIndex="6" GridPane.columnIndex="0"/>
+                                        <ComboBox fx:id="CurrencyCombo" prefWidth="180.0"
                                                   GridPane.rowIndex="6" GridPane.columnIndex="1"/>
+
+                                        <Label text="Γλώσσα:" GridPane.rowIndex="7" GridPane.columnIndex="0"/>
+                                        <ComboBox fx:id="LanguageCombo" prefWidth="180.0"
+                                                  GridPane.rowIndex="7" GridPane.columnIndex="1"/>
                                     </children>
                                 </GridPane>
                             </children>
