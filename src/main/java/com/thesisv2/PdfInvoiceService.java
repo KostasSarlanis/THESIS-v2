@@ -49,35 +49,61 @@ public class PdfInvoiceService {
         Font sectionFont = new Font(Font.HELVETICA, 12, Font.BOLD);
         Font normalFont = new Font(Font.HELVETICA, 10, Font.NORMAL);
 
+
         Paragraph title = new Paragraph("INVOICE / ΠΑΡΑΣΤΑΤΙΚΟ", titleFont);
         title.setAlignment(Element.ALIGN_CENTER);
+        title.setSpacingAfter(10f);
         document.add(title);
 
-        document.add(new Paragraph(" "));
-        document.add(new Paragraph("Invoice ID: " + invoiceId, normalFont));
-        document.add(new Paragraph("Type: " + invoiceType, normalFont));
-        document.add(new Paragraph("Status: " + invoiceStatus, normalFont));
-        document.add(new Paragraph("Issue Date: " + issueDate, normalFont));
-        document.add(new Paragraph("Due Date: " + dueDate, normalFont));
-        document.add(new Paragraph("Currency: " + currencyCode, normalFont));
+        PdfPTable topTable = new PdfPTable(new float[]{3f, 3f, 2.4f});
+        topTable.setWidthPercentage(100);
+        topTable.setSpacingAfter(12f);
 
-        document.add(new Paragraph("Αποθήκη: " + (warehouse == null ? "-" : warehouse)));
+        PdfPCell sellerCell = new PdfPCell();
+        sellerCell.setPadding(8f);
+        sellerCell.setVerticalAlignment(Element.ALIGN_TOP);
+        sellerCell.addElement(new Paragraph("Seller / Εκδότης", sectionFont));
+        sellerCell.addElement(new Paragraph(nullSafe(sellerName), normalFont));
+        sellerCell.addElement(new Paragraph(
+                nullSafe(sellerAddress) + ", " +
+                        nullSafe(sellerCity) + ", " +
+                        nullSafe(sellerPostalCode) + ", " +
+                        nullSafe(sellerCountry), normalFont));
+        sellerCell.addElement(new Paragraph("Tax ID: " + nullSafe(sellerTaxId), normalFont));
+        sellerCell.addElement(new Paragraph("Phone: " + nullSafe(sellerPhone), normalFont));
+        sellerCell.addElement(new Paragraph("Email: " + nullSafe(sellerEmail), normalFont));
 
-        document.add(new Paragraph(" "));
-        document.add(new Paragraph("Seller / Εκδότης", sectionFont));
-        document.add(new Paragraph(sellerName, normalFont));
-        document.add(new Paragraph(sellerAddress + ", " + sellerCity + ", " + sellerPostalCode + ", " + sellerCountry, normalFont));
-        document.add(new Paragraph("Tax ID: " + sellerTaxId, normalFont));
-        document.add(new Paragraph("Email: " + sellerEmail + " | Phone: " + sellerPhone, normalFont));
+        PdfPCell buyerCell = new PdfPCell();
+        buyerCell.setPadding(8f);
+        buyerCell.setVerticalAlignment(Element.ALIGN_TOP);
+        buyerCell.addElement(new Paragraph("Buyer / Πελάτης", sectionFont));
+        buyerCell.addElement(new Paragraph(nullSafe(customerName), normalFont));
+        buyerCell.addElement(new Paragraph(
+                nullSafe(customerAddress) + ", " +
+                        nullSafe(customerCity) + ", " +
+                        nullSafe(customerPostalCode) + ", " +
+                        nullSafe(customerCountry), normalFont));
+        buyerCell.addElement(new Paragraph("Tax ID: " + nullSafe(customerTaxId), normalFont));
+        buyerCell.addElement(new Paragraph("Phone: " + nullSafe(customerPhone), normalFont));
+        buyerCell.addElement(new Paragraph("Email: " + nullSafe(customerEmail), normalFont));
 
-        document.add(new Paragraph(" "));
-        document.add(new Paragraph("Customer / Πελάτης", sectionFont));
-        document.add(new Paragraph(customerName, normalFont));
-        document.add(new Paragraph(customerAddress + ", " + customerCity + ", " + customerPostalCode + ", " + customerCountry, normalFont));
-        document.add(new Paragraph("Tax ID: " + customerTaxId, normalFont));
-        document.add(new Paragraph("Email: " + customerEmail + " | Phone: " + customerPhone, normalFont));
+        PdfPCell infoCell = new PdfPCell();
+        infoCell.setPadding(8f);
+        infoCell.setVerticalAlignment(Element.ALIGN_TOP);
+        infoCell.addElement(new Paragraph("Invoice Info", sectionFont));
+        infoCell.addElement(new Paragraph("No: " + nullSafe(invoiceId), normalFont));
+        infoCell.addElement(new Paragraph("Type: " + nullSafe(invoiceType), normalFont));
+        infoCell.addElement(new Paragraph("Status: " + nullSafe(invoiceStatus), normalFont));
+        infoCell.addElement(new Paragraph("Issue: " + String.valueOf(issueDate), normalFont));
+        infoCell.addElement(new Paragraph("Due: " + String.valueOf(dueDate), normalFont));
+        infoCell.addElement(new Paragraph("Warehouse: " + (warehouse == null ? "-" : warehouse), normalFont));
+        infoCell.addElement(new Paragraph("Currency: " + nullSafe(currencyCode), normalFont));
 
-        document.add(new Paragraph(" "));
+        topTable.addCell(sellerCell);
+        topTable.addCell(buyerCell);
+        topTable.addCell(infoCell);
+
+        document.add(topTable);
 
         PdfPTable table = new PdfPTable(new float[]{1.0f, 1.8f, 4.0f, 1.4f, 1.4f, 1.4f});
         table.setWidthPercentage(100);
@@ -93,21 +119,31 @@ public class PdfInvoiceService {
             table.addCell(String.valueOf(line.getLineNo()));
             table.addCell(nullSafe(line.getItemCode()));
             table.addCell(nullSafe(line.getDescription()));
-            table.addCell(String.format("%.3f", line.getQuantity()));
+            table.addCell(nullSafe(String.valueOf(line.getQuantity())));
             table.addCell(String.format("%.2f", line.getUnitPrice()));
             table.addCell(String.format("%.2f", line.getLineTotal()));
         }
 
+        sellerCell.setBorder(Rectangle.BOX);
+        buyerCell.setBorder(Rectangle.BOX);
+        infoCell.setBorder(Rectangle.BOX);
+
         document.add(table);
 
         document.add(new Paragraph(" "));
-        document.add(new Paragraph("Υποσύνολο / Subtotal: " + subtotal + " " + currencyCode, normalFont));
-        document.add(new Paragraph("Συνολική έκπτωση % / Overall Discount %: " + nullSafe(overallDiscountPercent), normalFont));
-        document.add(new Paragraph("Σύνολο έκπτωσης / Discount Total: " + discountTotal + " " + currencyCode, normalFont));
-        document.add(new Paragraph("Σύνολο έκπτωσης / Discount Total: " + discountTotal + " " + currencyCode, normalFont));
-        document.add(new Paragraph("Σύνολο φόρου / Tax Total: " + taxTotal + " " + currencyCode, normalFont));
-        document.add(new Paragraph("Γενικό σύνολο / Grand Total: " + grandTotal + " " + currencyCode, sectionFont));
+        PdfPTable totalsTable = new PdfPTable(new float[]{3f, 1.5f});
+        totalsTable.setWidthPercentage(42);
+        totalsTable.setHorizontalAlignment(Element.ALIGN_RIGHT);
+        totalsTable.setSpacingBefore(10f);
+        totalsTable.setSpacingAfter(10f);
 
+        addTotalsRow(totalsTable, "Subtotal", subtotal + " " + currencyCode, normalFont);
+        addTotalsRow(totalsTable, "Discount %", nullSafe(overallDiscountPercent), normalFont);
+        addTotalsRow(totalsTable, "Discount Total", discountTotal + " " + currencyCode, normalFont);
+        addTotalsRow(totalsTable, "Tax Total", taxTotal + " " + currencyCode, normalFont);
+        addTotalsRow(totalsTable, "Grand Total", grandTotal + " " + currencyCode, sectionFont);
+
+        document.add(totalsTable);
         document.add(new Paragraph(" "));
         document.add(new Paragraph("Notes / Σημειώσεις", sectionFont));
         document.add(new Paragraph(nullSafe(notes), normalFont));
@@ -117,6 +153,21 @@ public class PdfInvoiceService {
         document.add(new Paragraph(nullSafe(paymentTerms), normalFont));
 
         document.close();
+    }
+
+    private void addTotalsRow(PdfPTable table, String label, String value, Font font) {
+        PdfPCell left = new PdfPCell(new Phrase(label, font));
+        left.setBorder(Rectangle.NO_BORDER);
+        left.setHorizontalAlignment(Element.ALIGN_LEFT);
+        left.setPadding(4f);
+
+        PdfPCell right = new PdfPCell(new Phrase(value, font));
+        right.setBorder(Rectangle.NO_BORDER);
+        right.setHorizontalAlignment(Element.ALIGN_RIGHT);
+        right.setPadding(4f);
+
+        table.addCell(left);
+        table.addCell(right);
     }
 
     private void addHeaderCell(PdfPTable table, String text) {

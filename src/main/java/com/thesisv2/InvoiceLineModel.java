@@ -9,7 +9,7 @@ public class InvoiceLineModel {
     private final IntegerProperty lineNo = new SimpleIntegerProperty();
     private final StringProperty itemCode = new SimpleStringProperty("");
     private final StringProperty description = new SimpleStringProperty("");
-    private final DoubleProperty quantity = new SimpleDoubleProperty(1.0);
+    private final IntegerProperty quantity = new SimpleIntegerProperty(1);
     private final StringProperty unitName = new SimpleStringProperty("τεμ");
     private final DoubleProperty unitPrice = new SimpleDoubleProperty(0.0);
     private final DoubleProperty discountPercent = new SimpleDoubleProperty(0.0);
@@ -21,7 +21,7 @@ public class InvoiceLineModel {
         recalculateLineTotal();
     }
 
-    public InvoiceLineModel(int lineNo, String itemCode, String description, double quantity,
+    public InvoiceLineModel(int lineNo, String itemCode, String description, int quantity,
                             String unitName, double unitPrice, double discountPercent, double taxPercent) {
         setLineNo(lineNo);
         setItemCode(itemCode);
@@ -54,9 +54,9 @@ public class InvoiceLineModel {
     public void setDescription(String value) { description.set(value); }
     public StringProperty descriptionProperty() { return description; }
 
-    public double getQuantity() { return quantity.get(); }
-    public void setQuantity(double value) { quantity.set(value); }
-    public DoubleProperty quantityProperty() { return quantity; }
+    public int getQuantity() { return quantity.get(); }
+    public void setQuantity(int value) { quantity.set(value); }
+    public IntegerProperty quantityProperty() { return quantity; }
 
     public String getUnitName() { return unitName.get(); }
     public void setUnitName(String value) { unitName.set(value); }

@@ -65,7 +65,7 @@ public class CreateInvoiceController implements Initializable {
     @FXML private TableColumn<InvoiceLineModel, Integer> ColLineNo;
     @FXML private TableColumn<InvoiceLineModel, String> ColItemCode;
     @FXML private TableColumn<InvoiceLineModel, String> ColDescription;
-    @FXML private TableColumn<InvoiceLineModel, Double> ColQuantity;
+    @FXML private TableColumn<InvoiceLineModel, Integer> ColQuantity;
     @FXML private TableColumn<InvoiceLineModel, String> ColUnit;
     @FXML private TableColumn<InvoiceLineModel, Double> ColUnitPrice;
     @FXML private TableColumn<InvoiceLineModel, Double> ColDiscount;
@@ -152,7 +152,7 @@ public class CreateInvoiceController implements Initializable {
         ColDescription.setCellFactory(TextFieldTableCell.forTableColumn());
         ColUnit.setCellFactory(TextFieldTableCell.forTableColumn());
         javafx.util.StringConverter<Double> flexibleDoubleConverter = createFlexibleDoubleConverter();
-        ColQuantity.setCellFactory(TextFieldTableCell.forTableColumn(flexibleDoubleConverter));
+        ColQuantity.setCellFactory(TextFieldTableCell.forTableColumn(new IntegerStringConverter()));
         ColUnitPrice.setCellFactory(TextFieldTableCell.forTableColumn(flexibleDoubleConverter));
         ColDiscount.setCellFactory(TextFieldTableCell.forTableColumn(flexibleDoubleConverter));
         ColTax.setCellFactory(TextFieldTableCell.forTableColumn(flexibleDoubleConverter));
@@ -212,11 +212,13 @@ public class CreateInvoiceController implements Initializable {
         });
 
         ColQuantity.setOnEditCommit(event -> {
-            event.getRowValue().setQuantity(safeDouble(event.getNewValue()));
+            Integer newValue = event.getNewValue();
+            event.getRowValue().setQuantity(newValue == null ? 0 : newValue);
             event.getRowValue().recalculateLineTotal();
             ensureExtraEmptyLine();
             refreshTableAndTotals();
         });
+
         ColUnit.setOnEditCommit(event -> event.getRowValue().setUnitName(event.getNewValue()));
         ColUnitPrice.setOnEditCommit(event -> {
             event.getRowValue().setUnitPrice(safeDouble(event.getNewValue()));
@@ -288,7 +290,7 @@ public class CreateInvoiceController implements Initializable {
     @FXML
     private void handleAddLine(javafx.event.ActionEvent event) {
         int nextLineNo = invoiceLines.size() + 1;
-        invoiceLines.add(new InvoiceLineModel(nextLineNo, "", "", 1.0, "τεμ", 0.0, 0.0, 24.0));
+        invoiceLines.add(new InvoiceLineModel(nextLineNo, "", "", 1, "τεμ", 0.0, 0.0, 24.0));
         ensureExtraEmptyLine();
         refreshTableAndTotals();
     }
@@ -426,7 +428,7 @@ public class CreateInvoiceController implements Initializable {
                 lineStmt.setInt(2, actualLineNo++);
                 lineStmt.setString(3, line.getItemCode());
                 lineStmt.setString(4, line.getDescription());
-                lineStmt.setBigDecimal(5, bd(line.getQuantity()));
+                lineStmt.setInt(5, line.getQuantity());
                 lineStmt.setString(6, line.getUnitName());
                 lineStmt.setBigDecimal(7, bd(line.getUnitPrice()));
                 lineStmt.setBigDecimal(8, bd(line.getDiscountPercent()));
@@ -488,7 +490,7 @@ public class CreateInvoiceController implements Initializable {
                 selectedLine.setDescription(product.getProductDescription());
                 selectedLine.setUnitPrice(product.getSellPrice());
                 selectedLine.setUnitName("τεμ");
-                selectedLine.setQuantity(selectedLine.getQuantity() <= 0 ? 1.0 : selectedLine.getQuantity());
+                selectedLine.setQuantity(selectedLine.getQuantity() <= 0 ? 1 : selectedLine.getQuantity());
                 selectedLine.recalculateLineTotal();
 
                 ensureExtraEmptyLine();
@@ -591,58 +593,128 @@ public class CreateInvoiceController implements Initializable {
     }
 
     private Node createPrintableNode() {
-        VBox root = new VBox(8);
-        root.setStyle("-fx-background-color: white; -fx-padding: 20;");
+        VBox root = new VBox(12);
+        root.setStyle("-fx-background-color: white; -fx-padding: 24;");
 
         Label title = new Label("ΠΑΡΑΣΤΑΤΙΚΟ " + InvoiceTypeCombo.getValue());
-        title.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
+        title.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
 
-        Label number = new Label("Αριθμός: " + (InvoiceIdField.getText().isBlank() ? "000000" : InvoiceIdField.getText()));
-        Label issue = new Label("Ημερομηνία: " + IssueDatePicker.getValue());
-        Label warehouse = new Label("Αποθήκη: " + WarehouseCombo.getValue());
-        Label customer = new Label("Πελάτης: " + CustomerNameField.getText());
-        Label seller = new Label("Εκδότης: " + SellerNameField.getText());
-        Label subtotal = new Label("Υποσύνολο: " + SubtotalField.getText() + " " + CurrencyCombo.getValue());
-        Label overallDiscount = new Label("Συνολική έκπτωση %: " + OverallDiscountPercentField.getText());
-        Label discountTotal = new Label("Σύνολο έκπτωσης: " + DiscountTotalField.getText() + " " + CurrencyCombo.getValue());
-        Label taxTotal = new Label("Σύνολο φόρου: " + TaxTotalField.getText() + " " + CurrencyCombo.getValue());
-        Label total = new Label("Γενικό σύνολο: " + GrandTotalField.getText() + " " + CurrencyCombo.getValue());
-        total.setStyle("-fx-font-weight: bold;");
+        GridPane topGrid = new GridPane();
+        topGrid.setHgap(24);
+        topGrid.setVgap(6);
+
+        VBox sellerBox = new VBox(4);
+        sellerBox.getChildren().addAll(
+                sectionLabel("Εκδότης"),
+                valueLabel(SellerNameField.getText()),
+                valueLabel(SellerAddressField.getText()),
+                valueLabel(SellerCityField.getText() + " " + SellerPostalCodeField.getText()),
+                valueLabel(SellerCountryField.getText()),
+                valueLabel("ΑΦΜ: " + SellerTaxIdField.getText()),
+                valueLabel("Τηλ: " + SellerPhoneField.getText()),
+                valueLabel("Email: " + SellerEmailField.getText())
+        );
+
+        VBox buyerBox = new VBox(4);
+        buyerBox.getChildren().addAll(
+                sectionLabel("Πελάτης"),
+                valueLabel(CustomerNameField.getText()),
+                valueLabel(CustomerAddressField.getText()),
+                valueLabel(CustomerCityField.getText() + " " + CustomerPostalCodeField.getText()),
+                valueLabel(CustomerCountryField.getText()),
+                valueLabel("ΑΦΜ: " + CustomerTaxIdField.getText()),
+                valueLabel("Τηλ: " + CustomerPhoneField.getText()),
+                valueLabel("Email: " + CustomerEmailField.getText())
+        );
+
+        VBox infoBox = new VBox(4);
+        infoBox.getChildren().addAll(
+                sectionLabel("Στοιχεία Παραστατικού"),
+                valueLabel("Αριθμός: " + (InvoiceIdField.getText().isBlank() ? "000000" : InvoiceIdField.getText())),
+                valueLabel("Ημερομηνία: " + IssueDatePicker.getValue()),
+                valueLabel("Λήξη: " + DueDatePicker.getValue()),
+                valueLabel("Αποθήκη: " + WarehouseCombo.getValue()),
+                valueLabel("Νόμισμα: " + CurrencyCombo.getValue()),
+                valueLabel("Κατάσταση: " + InvoiceStatusCombo.getValue())
+        );
+
+        topGrid.add(sellerBox, 0, 0);
+        topGrid.add(buyerBox, 1, 0);
+        topGrid.add(infoBox, 2, 0);
 
         GridPane linesGrid = new GridPane();
-        linesGrid.setHgap(10);
-        linesGrid.setVgap(5);
+        linesGrid.setHgap(12);
+        linesGrid.setVgap(6);
 
-        linesGrid.add(new Label("Α/Α"), 0, 0);
-        linesGrid.add(new Label("Περιγραφή"), 1, 0);
-        linesGrid.add(new Label("Ποσ."), 2, 0);
-        linesGrid.add(new Label("Τιμή"), 3, 0);
-        linesGrid.add(new Label("Σύνολο"), 4, 0);
+        Label h1 = headerLabel("Α/Α");
+        Label h2 = headerLabel("Περιγραφή");
+        Label h3 = headerLabel("Ποσ.");
+        Label h4 = headerLabel("Τιμή");
+        Label h5 = headerLabel("Σύνολο");
+
+        linesGrid.add(h1, 0, 0);
+        linesGrid.add(h2, 1, 0);
+        linesGrid.add(h3, 2, 0);
+        linesGrid.add(h4, 3, 0);
+        linesGrid.add(h5, 4, 0);
 
         int row = 1;
         for (InvoiceLineModel line : invoiceLines) {
-            if (isLineEmpty(line)) { continue; }
+            if (isLineEmpty(line)) continue;
 
-            linesGrid.add(new Label(String.valueOf(line.getLineNo())), 0, row);
-            linesGrid.add(new Label(line.getDescription()), 1, row);
-            linesGrid.add(new Label(formatNumber(line.getQuantity())), 2, row);
-            linesGrid.add(new Label(formatMoney(line.getUnitPrice())), 3, row);
-            linesGrid.add(new Label(formatMoney(line.getLineTotal())), 4, row);
+            linesGrid.add(valueLabel(String.valueOf(line.getLineNo())), 0, row);
+            linesGrid.add(valueLabel(line.getDescription()), 1, row);
+            linesGrid.add(valueLabel(formatNumber(line.getQuantity())), 2, row);
+            linesGrid.add(valueLabel(formatMoney(line.getUnitPrice())), 3, row);
+            linesGrid.add(valueLabel(formatMoney(line.getLineTotal())), 4, row);
             row++;
         }
 
+        VBox totalsBox = new VBox(4);
+        totalsBox.setStyle("-fx-alignment: center-right;");
+        totalsBox.getChildren().addAll(
+                valueLabel("Υποσύνολο: " + SubtotalField.getText() + " " + CurrencyCombo.getValue()),
+                valueLabel("Έκπτωση %: " + OverallDiscountPercentField.getText()),
+                valueLabel("Σύνολο έκπτωσης: " + DiscountTotalField.getText() + " " + CurrencyCombo.getValue()),
+                valueLabel("Σύνολο φόρου: " + TaxTotalField.getText() + " " + CurrencyCombo.getValue()),
+                boldValueLabel("Γενικό σύνολο: " + GrandTotalField.getText() + " " + CurrencyCombo.getValue())
+        );
+
         root.getChildren().addAll(
-                title, number, issue, warehouse, seller, customer,
+                title,
+                new Separator(),
+                topGrid,
                 new Separator(),
                 linesGrid,
                 new Separator(),
-                subtotal,
-                overallDiscount,
-                discountTotal,
-                taxTotal,
-                total
+                totalsBox
         );
+
         return root;
+    }
+
+    private Label sectionLabel(String text) {
+        Label label = new Label(text);
+        label.setStyle("-fx-font-size: 13px; -fx-font-weight: bold;");
+        return label;
+    }
+
+    private Label headerLabel(String text) {
+        Label label = new Label(text);
+        label.setStyle("-fx-font-size: 12px; -fx-font-weight: bold;");
+        return label;
+    }
+
+    private Label valueLabel(String text) {
+        Label label = new Label(text == null ? "" : text);
+        label.setStyle("-fx-font-size: 11px;");
+        return label;
+    }
+
+    private Label boldValueLabel(String text) {
+        Label label = new Label(text == null ? "" : text);
+        label.setStyle("-fx-font-size: 12px; -fx-font-weight: bold;");
+        return label;
     }
 
     private boolean validateBeforeSave() {
@@ -939,7 +1011,7 @@ public class CreateInvoiceController implements Initializable {
 
     private void ensureExtraEmptyLine() {
         if (invoiceLines.isEmpty()) {
-            invoiceLines.add(new InvoiceLineModel(1, "", "", 1.0, "τεμ", 0.0, 0.0, 24.0));
+            invoiceLines.add(new InvoiceLineModel(1, "", "", 1, "τεμ", 0.0, 0.0, 24.0));
             return;
         }
 
@@ -951,7 +1023,7 @@ public class CreateInvoiceController implements Initializable {
                         last.getUnitPrice() == 0.0;
 
         if (!lastIsEmpty) {
-            invoiceLines.add(new InvoiceLineModel(invoiceLines.size() + 1, "", "", 1.0, "τεμ", 0.0, 0.0, 24.0));
+            invoiceLines.add(new InvoiceLineModel(invoiceLines.size() + 1, "", "", 1, "τεμ", 0.0, 0.0, 24.0));
         }
 
         resequenceLines();
@@ -1028,7 +1100,7 @@ public class CreateInvoiceController implements Initializable {
         return 0.0;
     }
 
-    private void reduceStock(Connection connection, String itemCode, int warehouse, double quantity) throws SQLException {
+    private void reduceStock(Connection connection, String itemCode, int warehouse, int quantity) throws SQLException {
         String sql = """
         UPDATE prod_warehouse_link
         SET STOCK = STOCK - ?
@@ -1036,10 +1108,10 @@ public class CreateInvoiceController implements Initializable {
     """;
 
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setDouble(1, quantity);
+            stmt.setInt(1, quantity);
             stmt.setInt(2, Integer.parseInt(itemCode));
             stmt.setInt(3, warehouse);
-            stmt.setDouble(4, quantity);
+            stmt.setInt(4, quantity);
 
             int updatedRows = stmt.executeUpdate();
 
@@ -1075,7 +1147,7 @@ public class CreateInvoiceController implements Initializable {
             }
 
             double available = getAvailableStock(connection, line.getItemCode(), warehouse);
-            double requested = line.getQuantity();
+            int requested = line.getQuantity();
 
             if (requested > available) {
                 line.setInsufficientStock(true);
