@@ -14,7 +14,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.control.SplitPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
-import javafx.util.converter.DoubleStringConverter;
+import javafx.scene.control.Button;
 import javafx.util.converter.IntegerStringConverter;
 
 import java.io.File;
@@ -79,7 +79,16 @@ public class CreateInvoiceController implements Initializable {
     @FXML private TextField OverallDiscountPercentField;
     @FXML private ComboBox<Integer> WarehouseCombo;
 
+    @FXML private Button AddLineButton;
+    @FXML private Button PickProductButton;
+    @FXML private Button RemoveLineButton;
+    @FXML private Button SaveButton;
+    @FXML private Button SavePdfButton;
+    @FXML private Button PrintButton;
+    @FXML private Button ClearButton;
+
     private final ObservableList<InvoiceLineModel> invoiceLines = FXCollections.observableArrayList();
+    private boolean readOnlyMode = false;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -289,6 +298,7 @@ public class CreateInvoiceController implements Initializable {
 
     @FXML
     private void handleAddLine(javafx.event.ActionEvent event) {
+        if (readOnlyMode) return;
         int nextLineNo = invoiceLines.size() + 1;
         invoiceLines.add(new InvoiceLineModel(nextLineNo, "", "", 1, "τεμ", 0.0, 0.0, 24.0));
         ensureExtraEmptyLine();
@@ -297,6 +307,7 @@ public class CreateInvoiceController implements Initializable {
 
     @FXML
     private void handleRemoveSelectedLine(javafx.event.ActionEvent event) {
+        if (readOnlyMode) return;
         InvoiceLineModel selected = InvoiceLinesTable.getSelectionModel().getSelectedItem();
         if (selected == null) {
             showWarning("Επιλογή γραμμής", "Επίλεξε πρώτα μια γραμμή για διαγραφή.");
@@ -311,6 +322,7 @@ public class CreateInvoiceController implements Initializable {
 
     @FXML
     private void handleClearAll(javafx.event.ActionEvent event) {
+        if (readOnlyMode) return;
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("Καθαρισμός");
         alert.setHeaderText("Καθαρισμός όλων των πεδίων");
@@ -471,8 +483,179 @@ public class CreateInvoiceController implements Initializable {
         }
     }
 
+    public void setReadOnlyMode(boolean readOnly) {
+        this.readOnlyMode = readOnly;
+
+        InvoiceIdField.setEditable(false);
+
+        InvoiceTypeCombo.setDisable(readOnly);
+        InvoiceStatusCombo.setDisable(readOnly);
+        IssueDatePicker.setDisable(readOnly);
+        DueDatePicker.setDisable(readOnly);
+        CurrencyCombo.setDisable(readOnly);
+        LanguageCombo.setDisable(readOnly);
+        WarehouseCombo.setDisable(readOnly);
+
+        SellerNameField.setEditable(!readOnly);
+        SellerAddressField.setEditable(!readOnly);
+        SellerCityField.setEditable(!readOnly);
+        SellerPostalCodeField.setEditable(!readOnly);
+        SellerCountryField.setEditable(!readOnly);
+        SellerTaxIdField.setEditable(!readOnly);
+        SellerEmailField.setEditable(!readOnly);
+        SellerPhoneField.setEditable(!readOnly);
+
+        CustomerNameField.setEditable(!readOnly);
+        CustomerAddressField.setEditable(!readOnly);
+        CustomerCityField.setEditable(!readOnly);
+        CustomerPostalCodeField.setEditable(!readOnly);
+        CustomerCountryField.setEditable(!readOnly);
+        CustomerTaxIdField.setEditable(!readOnly);
+        CustomerEmailField.setEditable(!readOnly);
+        CustomerPhoneField.setEditable(!readOnly);
+
+        NotesArea.setEditable(!readOnly);
+        PaymentTermsArea.setEditable(!readOnly);
+        OverallDiscountPercentField.setEditable(!readOnly);
+
+        InvoiceLinesTable.setEditable(!readOnly);
+
+        if (AddLineButton != null) AddLineButton.setDisable(readOnly);
+        if (PickProductButton != null) PickProductButton.setDisable(readOnly);
+        if (RemoveLineButton != null) RemoveLineButton.setDisable(readOnly);
+        if (SaveButton != null) SaveButton.setDisable(readOnly);
+        if (ClearButton != null) ClearButton.setDisable(readOnly);
+
+        // κρατάμε PDF / Εκτύπωση ενεργά
+        if (SavePdfButton != null) SavePdfButton.setDisable(false);
+        if (PrintButton != null) PrintButton.setDisable(false);
+
+        if (readOnly) {
+            HeaderInfoLabel.setText("Προβολή παραστατικού");
+        } else {
+            updateHeaderInfo();
+        }
+    }
+
+    public void loadInvoiceForView(int invoiceId) {
+        String headerSql = """
+            SELECT *
+            FROM invoice_header
+            WHERE invoice_id = ?
+            """;
+
+        String linesSql = """
+            SELECT *
+            FROM invoice_line
+            WHERE invoice_id = ?
+            ORDER BY line_no
+            """;
+
+        try (Connection connection = new DBConnection().getConnection();
+             PreparedStatement headerStmt = connection.prepareStatement(headerSql);
+             PreparedStatement linesStmt = connection.prepareStatement(linesSql)) {
+
+            headerStmt.setInt(1, invoiceId);
+
+            try (ResultSet rs = headerStmt.executeQuery()) {
+                if (!rs.next()) {
+                    showError("Δεν βρέθηκε", "Το παραστατικό δεν βρέθηκε.");
+                    return;
+                }
+
+                InvoiceIdField.setText(formatInvoiceId(rs.getInt("invoice_id")));
+                InvoiceTypeCombo.setValue(rs.getString("invoice_type"));
+                InvoiceStatusCombo.setValue(rs.getString("invoice_status"));
+
+                Date issueDate = rs.getDate("issue_date");
+                if (issueDate != null) {
+                    IssueDatePicker.setValue(issueDate.toLocalDate());
+                }
+
+                Date dueDate = rs.getDate("due_date");
+                if (dueDate != null) {
+                    DueDatePicker.setValue(dueDate.toLocalDate());
+                }
+
+                CurrencyCombo.setValue(rs.getString("currency_code"));
+                LanguageCombo.setValue(rs.getString("language_code"));
+
+                SellerNameField.setText(rs.getString("seller_name"));
+                SellerAddressField.setText(rs.getString("seller_address"));
+                SellerCityField.setText(rs.getString("seller_city"));
+                SellerPostalCodeField.setText(rs.getString("seller_postal_code"));
+                SellerCountryField.setText(rs.getString("seller_country"));
+                SellerTaxIdField.setText(rs.getString("seller_tax_id"));
+                SellerEmailField.setText(rs.getString("seller_email"));
+                SellerPhoneField.setText(rs.getString("seller_phone"));
+
+                CustomerNameField.setText(rs.getString("customer_name"));
+                CustomerAddressField.setText(rs.getString("customer_address"));
+                CustomerCityField.setText(rs.getString("customer_city"));
+                CustomerPostalCodeField.setText(rs.getString("customer_postal_code"));
+                CustomerCountryField.setText(rs.getString("customer_country"));
+                CustomerTaxIdField.setText(rs.getString("customer_tax_id"));
+                CustomerEmailField.setText(rs.getString("customer_email"));
+                CustomerPhoneField.setText(rs.getString("customer_phone"));
+
+                SubtotalField.setText(toPlainString(rs.getBigDecimal("subtotal")));
+                OverallDiscountPercentField.setText(toPlainString(rs.getBigDecimal("overall_discount_percent")));
+                DiscountTotalField.setText(toPlainString(rs.getBigDecimal("discount_total")));
+                TaxTotalField.setText(toPlainString(rs.getBigDecimal("tax_total")));
+                GrandTotalField.setText(toPlainString(rs.getBigDecimal("grand_total")));
+
+                NotesArea.setText(rs.getString("notes"));
+                PaymentTermsArea.setText(rs.getString("payment_terms"));
+
+                int warehouseId = rs.getInt("source_warehouse");
+                if (!rs.wasNull()) {
+                    WarehouseCombo.setValue(warehouseId);
+                }
+            }
+
+            invoiceLines.clear();
+            linesStmt.setInt(1, invoiceId);
+
+            try (ResultSet rsLines = linesStmt.executeQuery()) {
+                while (rsLines.next()) {
+                    InvoiceLineModel line = new InvoiceLineModel(
+                            rsLines.getInt("line_no"),
+                            rsLines.getString("item_code"),
+                            rsLines.getString("description"),
+                            rsLines.getInt("quantity"),
+                            rsLines.getString("unit_name"),
+                            rsLines.getDouble("unit_price"),
+                            rsLines.getDouble("discount_percent"),
+                            rsLines.getDouble("tax_percent")
+                    );
+
+                    if (rsLines.getBigDecimal("line_total") != null) {
+                        line.setLineTotal(rsLines.getBigDecimal("line_total").doubleValue());
+                    }
+
+                    invoiceLines.add(line);
+                }
+            }
+
+            InvoiceLinesTable.refresh();
+            HeaderInfoLabel.setText("Παραστατικό: " + InvoiceIdField.getText());
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            showError("Σφάλμα φόρτωσης", "Δεν ήταν δυνατή η φόρτωση του παραστατικού.");
+        }
+    }
+
+    private String toPlainString(BigDecimal value) {
+        if (value == null) {
+            return "";
+        }
+        return value.stripTrailingZeros().toPlainString();
+    }
+
     @FXML
     private void handlePickProduct(javafx.event.ActionEvent event) {
+        if (readOnlyMode) return;
         InvoiceLineModel selectedLine = InvoiceLinesTable.getSelectionModel().getSelectedItem();
         if (selectedLine == null) {
             showWarning("Επιλογή γραμμής", "Επίλεξε πρώτα μια γραμμή τιμολογίου.");
@@ -510,6 +693,7 @@ public class CreateInvoiceController implements Initializable {
 
     @FXML
     private void handleSavePdf(javafx.event.ActionEvent event) {
+        if (readOnlyMode) return;
         if (!validateBeforeExport()) {
             return;
         }

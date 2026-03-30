@@ -1,14 +1,211 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.util.*?>
-<?import javafx.scene.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
 
-<AnchorPane xmlns="http://javafx.com/javafx"
-            xmlns:fx="http://javafx.com/fxml"
-            fx:controller="com.thesisv2.InvoiceListController"
-            prefHeight="400.0" prefWidth="600.0">
+<SplitPane fx:id="SplitPaneControll"
+           xmlns="http://javafx.com/javafx/21"
+           xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="com.thesisv2.InvoiceListController">
 
-</AnchorPane>
+    <items>
+
+        <!-- LEFT FILTER PANEL -->
+        <VBox fx:id="FilterPane" prefWidth="220.0" spacing="10.0" style="-fx-background-color: #eeeeee;">
+            <children>
+
+                <VBox spacing="5.0">
+                    <children>
+                        <Label text="Invoice ID">
+                            <VBox.margin>
+                                <Insets top="10.0"/>
+                            </VBox.margin>
+                            <font>
+                                <Font name="System Bold" size="13.0"/>
+                            </font>
+                        </Label>
+                        <TextField fx:id="SearchInvoiceId" promptText="Αναζήτηση Invoice ID">
+                            <font>
+                                <Font size="13.0"/>
+                            </font>
+                        </TextField>
+                    </children>
+                    <padding>
+                        <Insets left="10.0" right="10.0"/>
+                    </padding>
+                </VBox>
+
+                <VBox spacing="5.0">
+                    <children>
+                        <Label text="Τύπος παραστατικού">
+                            <font>
+                                <Font name="System Bold" size="13.0"/>
+                            </font>
+                        </Label>
+                        <TextField fx:id="SearchInvoiceType" promptText="Αναζήτηση τύπου παραστατικού">
+                            <font>
+                                <Font size="13.0"/>
+                            </font>
+                        </TextField>
+                    </children>
+                    <padding>
+                        <Insets left="10.0" right="10.0"/>
+                    </padding>
+                </VBox>
+
+                <VBox spacing="5.0">
+                    <children>
+                        <Label text="Πελάτης">
+                            <font>
+                                <Font name="System Bold" size="13.0"/>
+                            </font>
+                        </Label>
+                        <TextField fx:id="SearchCustomerName" promptText="Αναζήτηση πελάτη">
+                            <font>
+                                <Font size="13.0"/>
+                            </font>
+                        </TextField>
+                    </children>
+                    <padding>
+                        <Insets left="10.0" right="10.0"/>
+                    </padding>
+                </VBox>
+
+                <VBox spacing="5.0">
+                    <children>
+                        <Label text="ΑΦΜ Πελάτη">
+                            <font>
+                                <Font name="System Bold" size="13.0"/>
+                            </font>
+                        </Label>
+                        <TextField fx:id="SearchCustomerTaxId" promptText="Αναζήτηση ΑΦΜ πελάτη">
+                            <font>
+                                <Font size="13.0"/>
+                            </font>
+                        </TextField>
+                    </children>
+                    <padding>
+                        <Insets left="10.0" right="10.0"/>
+                    </padding>
+                </VBox>
+
+                <VBox spacing="5.0">
+                    <children>
+                        <Label text="Γενικό σύνολο">
+                            <font>
+                                <Font name="System Bold" size="13.0"/>
+                            </font>
+                        </Label>
+                        <TextField fx:id="SearchGrandTotal" promptText="Αναζήτηση γενικού συνόλου">
+                            <font>
+                                <Font size="13.0"/>
+                            </font>
+                        </TextField>
+                    </children>
+                    <padding>
+                        <Insets left="10.0" right="10.0"/>
+                    </padding>
+                </VBox>
+
+                <VBox spacing="5.0">
+                    <children>
+                        <Label text="Σημειώσεις">
+                            <font>
+                                <Font name="System Bold" size="13.0"/>
+                            </font>
+                        </Label>
+                        <TextField fx:id="SearchNotes" promptText="Αναζήτηση σημειώσεων">
+                            <font>
+                                <Font size="13.0"/>
+                            </font>
+                        </TextField>
+                    </children>
+                    <padding>
+                        <Insets left="10.0" right="10.0"/>
+                    </padding>
+                </VBox>
+
+                <VBox spacing="5.0">
+                    <children>
+                        <Label text="Όροι πληρωμής">
+                            <font>
+                                <Font name="System Bold" size="13.0"/>
+                            </font>
+                        </Label>
+                        <TextField fx:id="SearchPaymentTerms" promptText="Αναζήτηση όρων πληρωμής">
+                            <font>
+                                <Font size="13.0"/>
+                            </font>
+                        </TextField>
+                    </children>
+                    <padding>
+                        <Insets left="10.0" right="10.0"/>
+                    </padding>
+                </VBox>
+
+                <VBox spacing="5.0">
+                    <children>
+                        <Label text="Αναζήτηση σε όλα">
+                            <font>
+                                <Font name="System Bold" size="13.0"/>
+                            </font>
+                        </Label>
+                        <TextField fx:id="SearchAll" promptText="Αναζήτηση σε όλα">
+                            <font>
+                                <Font size="13.0"/>
+                            </font>
+                        </TextField>
+                    </children>
+                    <padding>
+                        <Insets left="10.0" right="10.0"/>
+                    </padding>
+                </VBox>
+
+            </children>
+        </VBox>
+
+        <!-- RIGHT CONTENT -->
+        <VBox spacing="6.0">
+            <children>
+
+                <HBox alignment="CENTER_LEFT" spacing="10.0">
+                    <children>
+                        <Label text="Λίστα παραστατικών">
+                            <font>
+                                <Font name="System Bold" size="16.0"/>
+                            </font>
+                        </Label>
+                        <Label fx:id="ResultLabel" text="Αποτελέσματα: 0"/>
+                    </children>
+                    <padding>
+                        <Insets left="10.0" right="10.0" top="10.0"/>
+                    </padding>
+                </HBox>
+
+                <TableView fx:id="InvoiceTableView" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="ColumnInvoiceId" prefWidth="100.0" text="Invoice ID"/>
+                        <TableColumn fx:id="ColumnInvoiceType" prefWidth="170.0" text="Τύπος παραστατικού"/>
+                        <TableColumn fx:id="ColumnCustomerName" prefWidth="220.0" text="Πελάτης"/>
+                        <TableColumn fx:id="ColumnCustomerTaxId" prefWidth="140.0" text="ΑΦΜ Πελάτη"/>
+                        <TableColumn fx:id="ColumnGrandTotal" prefWidth="130.0" text="Grand Total"/>
+                        <TableColumn fx:id="ColumnNotes" prefWidth="240.0" text="Σημειώσεις"/>
+                        <TableColumn fx:id="ColumnPaymentTerms" prefWidth="220.0" text="Όροι πληρωμής"/>
+                    </columns>
+                </TableView>
+
+            </children>
+            <padding>
+                <Insets top="10.0" right="10.0" bottom="10.0" left="10.0"/>
+            </padding>
+        </VBox>
+
+    </items>
+</SplitPane>
