@@ -89,6 +89,8 @@ public class CreateInvoiceController implements Initializable {
 
     private final ObservableList<InvoiceLineModel> invoiceLines = FXCollections.observableArrayList();
     private boolean readOnlyMode = false;
+    private Integer currentInvoiceId = null;
+    private boolean editMode = false;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -646,6 +648,17 @@ public class CreateInvoiceController implements Initializable {
         }
     }
 
+    public void loadInvoiceForEdit(int invoiceId) {
+        currentInvoiceId = invoiceId;
+        editMode = true;
+        readOnlyMode = false;
+
+        loadInvoiceForView(invoiceId);
+        setReadOnlyMode(false);
+
+        HeaderInfoLabel.setText("Επεξεργασία παραστατικού: " + InvoiceIdField.getText());
+    }
+
     private String toPlainString(BigDecimal value) {
         if (value == null) {
             return "";
@@ -945,6 +958,105 @@ public class CreateInvoiceController implements Initializable {
             return false;
         }
         return true;
+    }
+
+    private void reverseInvoiceStock(Connection connection, int invoiceId) throws Exception {
+        String headerSql = """
+            SELECT source_warehouse
+            FROM invoice_header
+            WHERE invoice_id = ?
+            """;
+
+        String lineSql = """
+            SELECT product_id, quantity
+            FROM invoice_line
+            WHERE invoice_id = ?
+            ORDER BY line_no
+            """;
+
+        Integer sourceWarehouse;
+
+        try (PreparedStatement headerStmt = connection.prepareStatement(headerSql)) {
+            headerStmt.setInt(1, invoiceId);
+
+            try (ResultSet rs = headerStmt.executeQuery()) {
+                if (!rs.next()) {
+                    throw new Exception("Δεν βρέθηκε το αρχικό παραστατικό για αντιστροφή stock.");
+                }
+
+                sourceWarehouse = (Integer) rs.getObject("source_warehouse");
+            }
+        }
+
+        if (sourceWarehouse == null) {
+            return;
+        }
+
+        try (PreparedStatement lineStmt = connection.prepareStatement(lineSql)) {
+            lineStmt.setInt(1, invoiceId);
+
+            try (ResultSet rs = lineStmt.executeQuery()) {
+                while (rs.next()) {
+                    int productId = rs.getInt("product_id");
+                    int quantity = rs.getInt("quantity");
+
+                    addInvoiceStock(connection, productId, sourceWarehouse, quantity);
+                }
+            }
+        }
+    }
+
+    private void addInvoiceStock(Connection connection, int productId, int warehouseId, int quantity) throws Exception {
+        String selectSql = """
+            SELECT STOCK
+            FROM prod_warehouse_link
+            WHERE PRODUCT = ? AND WAREHOUSE = ?
+            """;
+
+        try (PreparedStatement selectStmt = connection.prepareStatement(selectSql)) {
+            selectStmt.setInt(1, productId);
+            selectStmt.setInt(2, warehouseId);
+
+            try (ResultSet rs = selectStmt.executeQuery()) {
+                if (rs.next()) {
+                    int currentStock = rs.getInt("STOCK");
+
+                    String updateSql = """
+                        UPDATE prod_warehouse_link
+                        SET STOCK = ?
+                        WHERE PRODUCT = ? AND WAREHOUSE = ?
+                        """;
+
+                    try (PreparedStatement updateStmt = connection.prepareStatement(updateSql)) {
+                        updateStmt.setInt(1, currentStock + quantity);
+                        updateStmt.setInt(2, productId);
+                        updateStmt.setInt(3, warehouseId);
+                        updateStmt.executeUpdate();
+                    }
+                } else {
+                    String insertSql = """
+                        INSERT INTO prod_warehouse_link (PRODUCT, WAREHOUSE, STOCK)
+                        VALUES (?, ?, ?)
+                        """;
+
+                    try (PreparedStatement insertStmt = connection.prepareStatement(insertSql)) {
+                        insertStmt.setInt(1, productId);
+                        insertStmt.setInt(2, warehouseId);
+                        insertStmt.setInt(3, quantity);
+                        insertStmt.executeUpdate();
+                    }
+                }
+            }
+        }
+    }
+
+    private void deleteInvoiceLines(Connection connection, int invoiceId) throws Exception {
+        String sql = "DELETE FROM invoice_line WHERE invoice_id = ?";
+
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setInt(1, invoiceId);
+            stmt.executeUpdate();
+        }
     }
 
     private boolean isLineEmpty(InvoiceLineModel line) {
@@ -1346,6 +1458,12 @@ public class CreateInvoiceController implements Initializable {
         }
 
         return ok;
+    }
+
+    private void closeCurrentWindow(){
+        if (SaveButton != null && SaveButton.getScene() != null && SaveButton.getScene().getWindow() != null){
+            ((javafx.stage.Stage) SaveButton.getScene().getWindow()).close();
+        }
     }
 
 

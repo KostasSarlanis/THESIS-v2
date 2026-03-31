@@ -254,7 +254,9 @@ public class InvoiceListController implements Initializable {
             TableRow<InvoiceListRow> row = new TableRow<>();
 
             ContextMenu contextMenu = new ContextMenu();
+
             MenuItem viewItem = new MenuItem("Προβολή");
+            MenuItem editItem = new MenuItem("Επεξεργασία");
 
             viewItem.setOnAction(event -> {
                 InvoiceListRow selectedInvoice = row.getItem();
@@ -264,7 +266,15 @@ public class InvoiceListController implements Initializable {
                 }
             });
 
-            contextMenu.getItems().add(viewItem);
+            editItem.setOnAction(event -> {
+                InvoiceListRow selectedInvoice = row.getItem();
+                if (selectedInvoice != null) {
+                    InvoiceTableView.getSelectionModel().select(selectedInvoice);
+                    openInvoiceForEdit(selectedInvoice.getInvoiceId());
+                }
+            });
+
+            contextMenu.getItems().addAll(viewItem, editItem);
 
             row.contextMenuProperty().bind(
                     Bindings.when(row.emptyProperty())
@@ -302,6 +312,28 @@ public class InvoiceListController implements Initializable {
         } catch (Exception e) {
             e.printStackTrace();
             showError("Σφάλμα", "Δεν ήταν δυνατό το άνοιγμα του παραστατικού.");
+        }
+    }
+
+    private void openInvoiceForEdit(int invoiceId) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("create-invoice-view.fxml"));
+            Parent root = loader.load();
+
+            CreateInvoiceController controller = loader.getController();
+            controller.loadInvoiceForEdit(invoiceId);
+
+            Stage stage = new Stage();
+            stage.setTitle("Επεξεργασία παραστατικού");
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.setScene(new Scene(root, 1400, 800));
+            stage.showAndWait();
+
+            loadInvoices();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            showError("Σφάλμα", "Δεν ήταν δυνατό το άνοιγμα του παραστατικού για επεξεργασία.");
         }
     }
 
@@ -356,4 +388,33 @@ public class InvoiceListController implements Initializable {
         alert.setContentText(content);
         alert.showAndWait();
     }
+
+    @FXML
+    private void handleRefreshInvoices(javafx.event.ActionEvent event){
+        loadInvoices();
+    }
+
+
+
+
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

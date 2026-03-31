@@ -10,6 +10,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
+<?import javafx.scene.control.Button?>
 <SplitPane fx:id="SplitPaneControll"
            xmlns="http://javafx.com/javafx/21"
            xmlns:fx="http://javafx.com/fxml/1"
@@ -171,18 +172,18 @@
             </children>
         </VBox>
 
-        <!-- RIGHT CONTENT -->
         <VBox spacing="6.0">
             <children>
 
                 <HBox alignment="CENTER_LEFT" spacing="10.0">
                     <children>
-                        <Label text="Λίστα παραστατικών">
+                        <Label text="Λίστα παραστατικών">-
                             <font>
                                 <Font name="System Bold" size="16.0"/>
                             </font>
                         </Label>
                         <Label fx:id="ResultLabel" text="Αποτελέσματα: 0"/>
+                        <Button text="Ανανέωση" onAction="#handleRefreshInvoices"/>
                     </children>
                     <padding>
                         <Insets left="10.0" right="10.0" top="10.0"/>

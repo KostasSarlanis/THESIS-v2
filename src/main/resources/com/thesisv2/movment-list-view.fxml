@@ -1,14 +1,170 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.util.*?>
-<?import javafx.scene.*?>
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
 
-<AnchorPane xmlns="http://javafx.com/javafx"
-            xmlns:fx="http://javafx.com/fxml"
-            fx:controller="com.thesisv2.MovmentListController"
-            prefHeight="400.0" prefWidth="600.0">
+<SplitPane fx:id="SplitPaneControll"
+           xmlns="http://javafx.com/javafx/21"
+           xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="com.thesisv2.MovmentListController">
 
-</AnchorPane>
+    <items>
+
+        <VBox fx:id="FilterPane"
+              prefWidth="220.0"
+              minWidth="220.0"
+              maxWidth="220.0"
+              spacing="10.0"
+              style="-fx-background-color: #eeeeee;">
+            <children>
+
+                <VBox spacing="5.0">
+                    <children>
+                        <Label text="Κωδικός κίνησης">
+                            <VBox.margin>
+                                <Insets top="10.0"/>
+                            </VBox.margin>
+                            <font>
+                                <Font name="System Bold" size="13.0"/>
+                            </font>
+                        </Label>
+                        <TextField fx:id="SearchMovementId" promptText="Αναζήτηση κωδικού"/>
+                    </children>
+                    <padding>
+                        <Insets left="10.0" right="10.0"/>
+                    </padding>
+                </VBox>
+
+                <VBox spacing="5.0">
+                    <children>
+                        <Label text="Τύπος κίνησης">
+                            <font>
+                                <Font name="System Bold" size="13.0"/>
+                            </font>
+                        </Label>
+                        <TextField fx:id="SearchMovementType" promptText="Αναζήτηση τύπου"/>
+                    </children>
+                    <padding>
+                        <Insets left="10.0" right="10.0"/>
+                    </padding>
+                </VBox>
+
+                <VBox spacing="5.0">
+                    <children>
+                        <Label text="Ημερομηνία">
+                            <font>
+                                <Font name="System Bold" size="13.0"/>
+                            </font>
+                        </Label>
+                        <TextField fx:id="SearchMovementDate" promptText="Αναζήτηση ημερομηνίας"/>
+                    </children>
+                    <padding>
+                        <Insets left="10.0" right="10.0"/>
+                    </padding>
+                </VBox>
+
+                <VBox spacing="5.0">
+                    <children>
+                        <Label text="Αποθήκη προέλευσης">
+                            <font>
+                                <Font name="System Bold" size="13.0"/>
+                            </font>
+                        </Label>
+                        <TextField fx:id="SearchSourceWarehouse" promptText="Αναζήτηση αποθήκης προέλευσης"/>
+                    </children>
+                    <padding>
+                        <Insets left="10.0" right="10.0"/>
+                    </padding>
+                </VBox>
+
+                <VBox spacing="5.0">
+                    <children>
+                        <Label text="Αποθήκη προορισμού">
+                            <font>
+                                <Font name="System Bold" size="13.0"/>
+                            </font>
+                        </Label>
+                        <TextField fx:id="SearchDestinationWarehouse" promptText="Αναζήτηση αποθήκης προορισμού"/>
+                    </children>
+                    <padding>
+                        <Insets left="10.0" right="10.0"/>
+                    </padding>
+                </VBox>
+
+                <VBox spacing="5.0">
+                    <children>
+                        <Label text="Σχόλια">
+                            <font>
+                                <Font name="System Bold" size="13.0"/>
+                            </font>
+                        </Label>
+                        <TextField fx:id="SearchNotes" promptText="Αναζήτηση σχολίων"/>
+                    </children>
+                    <padding>
+                        <Insets left="10.0" right="10.0"/>
+                    </padding>
+                </VBox>
+
+                <VBox spacing="5.0">
+                    <children>
+                        <Label text="Αναζήτηση σε όλα">
+                            <font>
+                                <Font name="System Bold" size="13.0"/>
+                            </font>
+                        </Label>
+                        <TextField fx:id="SearchAll" promptText="Αναζήτηση σε όλα"/>
+                    </children>
+                    <padding>
+                        <Insets left="10.0" right="10.0"/>
+                    </padding>
+                </VBox>
+
+                <Region VBox.vgrow="ALWAYS"/>
+
+            </children>
+
+            <padding>
+                <Insets top="10.0" right="10.0" bottom="10.0" left="10.0"/>
+            </padding>
+        </VBox>
+
+        <VBox spacing="10.0">
+            <children>
+
+                <HBox alignment="CENTER_LEFT" spacing="10.0">
+                    <children>
+                        <Label text="Λίστα κινήσεων">
+                            <font>
+                                <Font name="System Bold" size="16.0"/>
+                            </font>
+                        </Label>
+
+                        <Label fx:id="ResultLabel" text="Αποτελέσματα: 0"/>
+                        <Button text="Ανανέωση" onAction="#handleRefreshMovements"/>
+                    </children>
+                    <padding>
+                        <Insets left="10.0" right="10.0" top="10.0"/>
+                    </padding>
+                </HBox>
+
+                <TableView fx:id="MovementTableView" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="ColumnMovementId" prefWidth="110.0" text="Κωδικός"/>
+                        <TableColumn fx:id="ColumnMovementType" prefWidth="170.0" text="Τύπος"/>
+                        <TableColumn fx:id="ColumnMovementDate" prefWidth="120.0" text="Ημερομηνία"/>
+                        <TableColumn fx:id="ColumnSourceWarehouse" prefWidth="160.0" text="Αποθήκη προέλευσης"/>
+                        <TableColumn fx:id="ColumnDestinationWarehouse" prefWidth="170.0" text="Αποθήκη προορισμού"/>
+                        <TableColumn fx:id="ColumnNotes" prefWidth="320.0" text="Σχόλια"/>
+                    </columns>
+                </TableView>
+
+            </children>
+
+            <padding>
+                <Insets bottom="10.0" left="10.0" right="10.0" top="10.0"/>
+            </padding>
+        </VBox>
+    </items>
+</SplitPane>
