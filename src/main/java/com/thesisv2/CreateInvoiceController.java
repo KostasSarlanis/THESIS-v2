@@ -91,6 +91,8 @@ public class CreateInvoiceController implements Initializable {
     private boolean readOnlyMode = false;
     private Integer currentInvoiceId = null;
     private boolean editMode = false;
+    private int editingInvoiceId = -1;
+    private int originalInvoiceWarehouse = -1;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -345,96 +347,160 @@ public class CreateInvoiceController implements Initializable {
         }
 
         Connection connection = null;
+
         try {
             DBConnection connect = new DBConnection();
             connection = connect.getConnection();
             connection.setAutoCommit(false);
 
-            if (!validateStockForSelectedWarehouse(connection)){
+            if (!validateStockForSelectedWarehouse(connection)) {
                 connection.rollback();
                 return;
             }
 
-            String insertHeaderSql = """
-            INSERT INTO invoice_header (
-                invoice_type, invoice_status, issue_date, due_date, currency_code, language_code,
-                seller_name, seller_address, seller_city, seller_postal_code, seller_country, seller_tax_id, seller_email, seller_phone,
-                customer_name, customer_address, customer_city, customer_postal_code, customer_country, customer_tax_id, customer_email, customer_phone,
-                subtotal, overall_discount_percent, discount_total, tax_total, grand_total, notes, payment_terms, source_warehouse
-            ) VALUES (?, ?, ?, ?, ?, ?,
-                      ?, ?, ?, ?, ?, ?, ?, ?,
-                      ?, ?, ?, ?, ?, ?, ?, ?,
-                      ?, ?, ?, ?, ?, ?, ?, ?)
-            """;
-
-            PreparedStatement headerStmt = connection.prepareStatement(insertHeaderSql, Statement.RETURN_GENERATED_KEYS);
-
-            headerStmt.setString(1, InvoiceTypeCombo.getValue());
-            headerStmt.setString(2, InvoiceStatusCombo.getValue());
-            headerStmt.setDate(3, Date.valueOf(IssueDatePicker.getValue()));
-
-            if (DueDatePicker.getValue() != null) {
-                headerStmt.setDate(4, Date.valueOf(DueDatePicker.getValue()));
-            } else {
-                headerStmt.setNull(4, Types.DATE);
-            }
-
-            headerStmt.setString(5, CurrencyCombo.getValue());
-            headerStmt.setString(6, LanguageCombo.getValue());
-
-            headerStmt.setString(7, SellerNameField.getText());
-            headerStmt.setString(8, SellerAddressField.getText());
-            headerStmt.setString(9, SellerCityField.getText());
-            headerStmt.setString(10, SellerPostalCodeField.getText());
-            headerStmt.setString(11, SellerCountryField.getText());
-            headerStmt.setString(12, SellerTaxIdField.getText());
-            headerStmt.setString(13, SellerEmailField.getText());
-            headerStmt.setString(14, SellerPhoneField.getText());
-
-            headerStmt.setString(15, CustomerNameField.getText());
-            headerStmt.setString(16, CustomerAddressField.getText());
-            headerStmt.setString(17, CustomerCityField.getText());
-            headerStmt.setString(18, CustomerPostalCodeField.getText());
-            headerStmt.setString(19, CustomerCountryField.getText());
-            headerStmt.setString(20, CustomerTaxIdField.getText());
-            headerStmt.setString(21, CustomerEmailField.getText());
-            headerStmt.setString(22, CustomerPhoneField.getText());
-
-            headerStmt.setBigDecimal(23, bd(SubtotalField.getText()));
-            headerStmt.setBigDecimal(24, bd(getOverallDiscountPercent()));
-            headerStmt.setBigDecimal(25, bd(DiscountTotalField.getText()));
-            headerStmt.setBigDecimal(26, bd(TaxTotalField.getText()));
-            headerStmt.setBigDecimal(27, bd(GrandTotalField.getText()));
-            headerStmt.setString(28, NotesArea.getText());
-            headerStmt.setString(29, PaymentTermsArea.getText());
-            headerStmt.setString(30, String.valueOf(WarehouseCombo.getValue()));
-
-            headerStmt.executeUpdate();
-
             int invoiceId;
-            ResultSet rs = headerStmt.getGeneratedKeys();
-            if (rs.next()) {
-                invoiceId = rs.getInt(1);
+
+            if (editMode && currentInvoiceId != null) {
+
+                reverseInvoiceStock(connection, currentInvoiceId);
+
+                String updateHeaderSql = """
+                UPDATE invoice_header SET
+                    invoice_type=?, invoice_status=?, issue_date=?, due_date=?, currency_code=?, language_code=?,
+                    seller_name=?, seller_address=?, seller_city=?, seller_postal_code=?, seller_country=?, seller_tax_id=?, seller_email=?, seller_phone=?,
+                    customer_name=?, customer_address=?, customer_city=?, customer_postal_code=?, customer_country=?, customer_tax_id=?, customer_email=?, customer_phone=?,
+                    subtotal=?, overall_discount_percent=?, discount_total=?, tax_total=?, grand_total=?, notes=?, payment_terms=?, source_warehouse=?
+                WHERE invoice_id=?
+                """;
+
+                PreparedStatement headerStmt = connection.prepareStatement(updateHeaderSql);
+
+                headerStmt.setString(1, InvoiceTypeCombo.getValue());
+                headerStmt.setString(2, InvoiceStatusCombo.getValue());
+                headerStmt.setDate(3, Date.valueOf(IssueDatePicker.getValue()));
+
+                if (DueDatePicker.getValue() != null) {
+                    headerStmt.setDate(4, Date.valueOf(DueDatePicker.getValue()));
+                } else {
+                    headerStmt.setNull(4, Types.DATE);
+                }
+
+                headerStmt.setString(5, CurrencyCombo.getValue());
+                headerStmt.setString(6, LanguageCombo.getValue());
+
+                headerStmt.setString(7, SellerNameField.getText());
+                headerStmt.setString(8, SellerAddressField.getText());
+                headerStmt.setString(9, SellerCityField.getText());
+                headerStmt.setString(10, SellerPostalCodeField.getText());
+                headerStmt.setString(11, SellerCountryField.getText());
+                headerStmt.setString(12, SellerTaxIdField.getText());
+                headerStmt.setString(13, SellerEmailField.getText());
+                headerStmt.setString(14, SellerPhoneField.getText());
+
+                headerStmt.setString(15, CustomerNameField.getText());
+                headerStmt.setString(16, CustomerAddressField.getText());
+                headerStmt.setString(17, CustomerCityField.getText());
+                headerStmt.setString(18, CustomerPostalCodeField.getText());
+                headerStmt.setString(19, CustomerCountryField.getText());
+                headerStmt.setString(20, CustomerTaxIdField.getText());
+                headerStmt.setString(21, CustomerEmailField.getText());
+                headerStmt.setString(22, CustomerPhoneField.getText());
+
+                headerStmt.setBigDecimal(23, bd(SubtotalField.getText()));
+                headerStmt.setBigDecimal(24, bd(getOverallDiscountPercent()));
+                headerStmt.setBigDecimal(25, bd(DiscountTotalField.getText()));
+                headerStmt.setBigDecimal(26, bd(TaxTotalField.getText()));
+                headerStmt.setBigDecimal(27, bd(GrandTotalField.getText()));
+                headerStmt.setString(28, NotesArea.getText());
+                headerStmt.setString(29, PaymentTermsArea.getText());
+                headerStmt.setString(30, String.valueOf(WarehouseCombo.getValue()));
+
+                headerStmt.setInt(31, currentInvoiceId);
+                headerStmt.executeUpdate();
+
+                deleteInvoiceLines(connection, currentInvoiceId);
+
+                invoiceId = currentInvoiceId;
+
             } else {
-                throw new SQLException("Δεν επιστράφηκε invoice_id.");
+                String insertHeaderSql = """
+                INSERT INTO invoice_header (
+                    invoice_type, invoice_status, issue_date, due_date, currency_code, language_code,
+                    seller_name, seller_address, seller_city, seller_postal_code, seller_country, seller_tax_id, seller_email, seller_phone,
+                    customer_name, customer_address, customer_city, customer_postal_code, customer_country, customer_tax_id, customer_email, customer_phone,
+                    subtotal, overall_discount_percent, discount_total, tax_total, grand_total, notes, payment_terms, source_warehouse
+                ) VALUES (?, ?, ?, ?, ?, ?,
+                          ?, ?, ?, ?, ?, ?, ?, ?,
+                          ?, ?, ?, ?, ?, ?, ?, ?,
+                          ?, ?, ?, ?, ?, ?, ?, ?)
+                """;
+
+                PreparedStatement headerStmt = connection.prepareStatement(insertHeaderSql, Statement.RETURN_GENERATED_KEYS);
+
+                headerStmt.setString(1, InvoiceTypeCombo.getValue());
+                headerStmt.setString(2, InvoiceStatusCombo.getValue());
+                headerStmt.setDate(3, Date.valueOf(IssueDatePicker.getValue()));
+
+                if (DueDatePicker.getValue() != null) {
+                    headerStmt.setDate(4, Date.valueOf(DueDatePicker.getValue()));
+                } else {
+                    headerStmt.setNull(4, Types.DATE);
+                }
+
+                headerStmt.setString(5, CurrencyCombo.getValue());
+                headerStmt.setString(6, LanguageCombo.getValue());
+
+                headerStmt.setString(7, SellerNameField.getText());
+                headerStmt.setString(8, SellerAddressField.getText());
+                headerStmt.setString(9, SellerCityField.getText());
+                headerStmt.setString(10, SellerPostalCodeField.getText());
+                headerStmt.setString(11, SellerCountryField.getText());
+                headerStmt.setString(12, SellerTaxIdField.getText());
+                headerStmt.setString(13, SellerEmailField.getText());
+                headerStmt.setString(14, SellerPhoneField.getText());
+
+                headerStmt.setString(15, CustomerNameField.getText());
+                headerStmt.setString(16, CustomerAddressField.getText());
+                headerStmt.setString(17, CustomerCityField.getText());
+                headerStmt.setString(18, CustomerPostalCodeField.getText());
+                headerStmt.setString(19, CustomerCountryField.getText());
+                headerStmt.setString(20, CustomerTaxIdField.getText());
+                headerStmt.setString(21, CustomerEmailField.getText());
+                headerStmt.setString(22, CustomerPhoneField.getText());
+
+                headerStmt.setBigDecimal(23, bd(SubtotalField.getText()));
+                headerStmt.setBigDecimal(24, bd(getOverallDiscountPercent()));
+                headerStmt.setBigDecimal(25, bd(DiscountTotalField.getText()));
+                headerStmt.setBigDecimal(26, bd(TaxTotalField.getText()));
+                headerStmt.setBigDecimal(27, bd(GrandTotalField.getText()));
+                headerStmt.setString(28, NotesArea.getText());
+                headerStmt.setString(29, PaymentTermsArea.getText());
+                headerStmt.setString(30, String.valueOf(WarehouseCombo.getValue()));
+
+                headerStmt.executeUpdate();
+
+                ResultSet rs = headerStmt.getGeneratedKeys();
+                if (rs.next()) {
+                    invoiceId = rs.getInt(1);
+                } else {
+                    throw new SQLException("Δεν επιστράφηκε invoice_id.");
+                }
             }
 
             String insertLineSql = """
-                    INSERT INTO invoice_line (
-                        invoice_id, line_no, item_code, description, quantity, unit_name,
-                        unit_price, discount_percent, tax_percent, line_total
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    """;
+            INSERT INTO invoice_line (
+                invoice_id, line_no, item_code, description, quantity, unit_name,
+                unit_price, discount_percent, tax_percent, line_total
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """;
 
             PreparedStatement lineStmt = connection.prepareStatement(insertLineSql);
 
             int actualLineNo = 1;
-            int selectedWarehouse = WarehouseCombo.getValue();
+            int warehouse = WarehouseCombo.getValue();
 
             for (InvoiceLineModel line : invoiceLines) {
-                if (isLineEmpty(line)) {
-                    continue;
-                }
+                if (isLineEmpty(line)) continue;
 
                 line.recalculateLineTotal();
 
@@ -450,38 +516,37 @@ public class CreateInvoiceController implements Initializable {
                 lineStmt.setBigDecimal(10, bd(line.getLineTotal()));
                 lineStmt.addBatch();
 
-                if (line.getItemCode() != null
-                        && !line.getItemCode().isBlank()
-                        && !"0".equals(line.getItemCode())) {
-                    reduceStock(connection, line.getItemCode(), selectedWarehouse, line.getQuantity());
+                if (!"0".equals(line.getItemCode())) {
+                    reduceStock(connection, line.getItemCode(), warehouse, line.getQuantity());
                 }
             }
 
             lineStmt.executeBatch();
             connection.commit();
 
-            InvoiceIdField.setText(formatInvoiceId(invoiceId));
-            showInfo("Αποθήκευση", "Το παραστατικό αποθηκεύτηκε με αριθμό " + formatInvoiceId(invoiceId) + ".");
+            if (editMode) {
+                closeCurrentWindow();
+            } else {
+                InvoiceIdField.setText(formatInvoiceId(invoiceId));
+                showInfo("Αποθήκευση", "Το παραστατικό αποθηκεύτηκε με αριθμό " + formatInvoiceId(invoiceId) + ".");
+            }
 
         } catch (Exception e) {
             e.printStackTrace();
+
             try {
-                if (connection != null) {
-                    connection.rollback();
-                }
-            } catch (SQLException ex) {
-                ex.printStackTrace();
-            }
+                if (connection != null) connection.rollback();
+            } catch (Exception ignored) {}
+
             showError("Σφάλμα αποθήκευσης", e.getMessage());
+
         } finally {
             try {
                 if (connection != null) {
                     connection.setAutoCommit(true);
                     connection.close();
                 }
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
+            } catch (Exception ignored) {}
         }
     }
 
