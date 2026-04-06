@@ -17,15 +17,16 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.sql.Types;
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
-import javafx.print.PrinterJob;
-import javafx.scene.Node;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import java.io.File;
+
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.printing.PDFPageable;
+import java.awt.print.PrinterJob;
+import java.nio.file.Files;
+import java.util.stream.Collectors;
 
 public class InnerMovmentController implements Initializable {
 
@@ -781,6 +782,8 @@ public class InnerMovmentController implements Initializable {
     }
 
     public void loadMovementForView(int movementId) {
+        currentMovementId = movementId;
+
         String headerSql = """
             SELECT *
             FROM movement_header
@@ -939,6 +942,7 @@ public class InnerMovmentController implements Initializable {
         );
 
         String movementNumber = currentMovementId == null ? "draft" : String.valueOf(currentMovementId);
+        System.out.println(movementNumber);
         fileChooser.setInitialFileName("movement_" + movementNumber + ".pdf");
 
         File file = fileChooser.showSaveDialog(MovementLinesTable.getScene().getWindow());
@@ -973,25 +977,58 @@ public class InnerMovmentController implements Initializable {
             return;
         }
 
-        PrinterJob job = PrinterJob.createPrinterJob();
-        if (job == null) {
-            showError("Εκτύπωση", "Δεν ήταν δυνατή η δημιουργία εργασίας εκτύπωσης.");
-            return;
+        File tempPdf = null;
+
+        try {
+            String movementIdForPrint = currentMovementId == null
+                    ? "000000"
+                    : String.valueOf(currentMovementId);
+
+            tempPdf = File.createTempFile("movement_" + movementIdForPrint + "_", ".pdf");
+
+            PdfMovementService pdfService = new PdfMovementService();
+            pdfService.exportMovementToPdf(
+                    tempPdf,
+                    movementIdForPrint,
+                    MovementTypeCombo.getValue(),
+                    MovementDatePicker.getValue(),
+                    SourceWarehouseCombo.getValue(),
+                    DestinationWarehouseCombo.getValue(),
+                    NotesArea.getText(),
+                    getRealMovementLines()
+            );
+
+            printPdfFile(tempPdf);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            showError("Σφάλμα εκτύπωσης", e.getMessage());
+        } finally {
+            if (tempPdf != null) {
+                try {
+                    Files.deleteIfExists(tempPdf.toPath());
+                } catch (Exception ignored) {
+                }
+            }
+        }
+    }
+
+    private void printPdfFile(File pdfFile) throws Exception {
+        if (pdfFile == null || !pdfFile.exists()) {
+            throw new Exception("Το προσωρινό PDF δεν βρέθηκε.");
         }
 
-        boolean proceed = job.showPrintDialog(MovementLinesTable.getScene().getWindow());
-        if (!proceed) {
-            return;
-        }
+        PrinterJob job = PrinterJob.getPrinterJob();
 
-        Node printableNode = createPrintableNode();
+        try (PDDocument document = PDDocument.load(pdfFile)) {
+            job.setPageable(new PDFPageable(document));
 
-        boolean printed = job.printPage(printableNode);
-        if (printed) {
-            job.endJob();
-            showInfo("Εκτύπωση", "Η κίνηση στάλθηκε στον εκτυπωτή.");
-        } else {
-            showError("Εκτύπωση", "Η εκτύπωση απέτυχε.");
+            boolean accepted = job.printDialog();
+            if (!accepted) {
+                return;
+            }
+
+            job.print();
         }
     }
 
@@ -1023,122 +1060,12 @@ public class InnerMovmentController implements Initializable {
         return true;
     }
 
-    private Node createPrintableNode() {
-        VBox root = new VBox(12);
-        root.setStyle("-fx-background-color: white; -fx-padding: 24;");
-
-        Label title = new Label("ΚΙΝΗΣΗ ΑΠΟΘΗΚΗΣ");
-        title.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
-
-        GridPane topGrid = new GridPane();
-        topGrid.setHgap(24);
-        topGrid.setVgap(6);
-
-        VBox infoBox = new VBox(4);
-        infoBox.getChildren().addAll(
-                sectionLabel("Στοιχεία Κίνησης"),
-                valueLabel("Αριθμός: " + (currentMovementId == null ? "000000" : currentMovementId)),
-                valueLabel("Τύπος: " + safeText(MovementTypeCombo.getValue())),
-                valueLabel("Ημερομηνία: " + safeText(MovementDatePicker.getValue())),
-                valueLabel("Αποθήκη προέλευσης: " + safeText(SourceWarehouseCombo.getValue())),
-                valueLabel("Αποθήκη προορισμού: " + safeText(DestinationWarehouseCombo.getValue()))
-        );
-
-        VBox notesBox = new VBox(4);
-        notesBox.getChildren().addAll(
-                sectionLabel("Σχόλια"),
-                valueLabel(safeText(NotesArea.getText()))
-        );
-
-        topGrid.add(infoBox, 0, 0);
-        topGrid.add(notesBox, 1, 0);
-
-        GridPane linesGrid = new GridPane();
-        linesGrid.setHgap(12);
-        linesGrid.setVgap(6);
-
-        linesGrid.add(headerLabel("Α/Α"), 0, 0);
-        linesGrid.add(headerLabel("Κωδικός"), 1, 0);
-        linesGrid.add(headerLabel("Περιγραφή"), 2, 0);
-        linesGrid.add(headerLabel("Ποσότητα"), 3, 0);
-
-        int row = 1;
-        for (MovementLineModel line : movementLines) {
-            if (isLineEmpty(line)) continue;
-
-            linesGrid.add(valueLabel(String.valueOf(line.getLineNo())), 0, row);
-            linesGrid.add(valueLabel(safeText(line.getProductId())), 1, row);
-            linesGrid.add(valueLabel(safeText(line.getDescription())), 2, row);
-            linesGrid.add(valueLabel(String.valueOf(line.getQuantity())), 3, row);
-            row++;
-        }
-
-        VBox totalsBox = new VBox(4);
-        totalsBox.setStyle("-fx-alignment: center-right;");
-        totalsBox.getChildren().addAll(
-                boldValueLabel("Συνολική ποσότητα: " + getTotalMovementQuantity())
-        );
-
-        root.getChildren().addAll(
-                title,
-                new Separator(),
-                topGrid,
-                new Separator(),
-                linesGrid,
-                new Separator(),
-                totalsBox
-        );
-
-        return root;
-    }
-
-    private Label sectionLabel(String text) {
-        Label label = new Label(text);
-        label.setStyle("-fx-font-size: 13px; -fx-font-weight: bold;");
-        return label;
-    }
-
-    private Label headerLabel(String text) {
-        Label label = new Label(text);
-        label.setStyle("-fx-font-size: 12px; -fx-font-weight: bold;");
-        return label;
-    }
-
-    private Label valueLabel(String text) {
-        Label label = new Label(text == null ? "" : text);
-        label.setStyle("-fx-font-size: 11px;");
-        return label;
-    }
-
-    private Label boldValueLabel(String text) {
-        Label label = new Label(text == null ? "" : text);
-        label.setStyle("-fx-font-size: 12px; -fx-font-weight: bold;");
-        return label;
-    }
-
-    private String safeText(Object value) {
-        return value == null ? "" : String.valueOf(value);
-    }
-
-    private int getTotalMovementQuantity() {
-        int total = 0;
-
-        for (MovementLineModel line : movementLines) {
-            if (isLineEmpty(line)) {
-                continue;
-            }
-            total += line.getQuantity();
-        }
-
-        return total;
-    }
-
-    private java.util.List<MovementLineModel> getRealMovementLines() {
+    private ObservableList<MovementLineModel> getRealMovementLines() {
         return movementLines.stream()
+                .filter(line -> line != null)
                 .filter(line -> !isLineEmpty(line))
-                .toList();
+                .collect(Collectors.toCollection(FXCollections::observableArrayList));
     }
-
 
 
 

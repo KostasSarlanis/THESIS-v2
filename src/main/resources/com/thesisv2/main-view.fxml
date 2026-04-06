@@ -32,7 +32,8 @@
                 </Menu>
                   <Menu fx:id="SettingsMenu" mnemonicParsing="false" text="Ρυθμίσεις">
                     <items>
-                      <MenuItem mnemonicParsing="false" text="Settings" />
+                      <MenuItem text="Ρυθμίσεις βάσης δεδομένων" onAction="#HandleDatabaseSettings" />
+                      <MenuItem text="Στοιχεία εταιρείας" onAction="#HandleCompanySettings" />
                     </items>
                   </Menu>
                 <Menu fx:id="HelpMenu" mnemonicParsing="false" text="Help" />
@@ -51,9 +52,9 @@
    <bottom>
       <HBox alignment="BOTTOM_LEFT" prefWidth="1280.0" BorderPane.alignment="CENTER">
          <children>
-            <Text strokeType="OUTSIDE" strokeWidth="0.0" text="TEST" />
+            <Text strokeType="OUTSIDE" strokeWidth="0.0" text="THESIS v2" />
             <Region HBox.hgrow="ALWAYS" />
-            <Text strokeType="OUTSIDE" strokeWidth="0.0" text="MORE TEST" />
+            <Text strokeType="OUTSIDE" strokeWidth="0.0" text="SARLANIS KONSTANTINOS" />
          </children>
       </HBox>
    </bottom>

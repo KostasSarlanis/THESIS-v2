@@ -193,9 +193,23 @@ public class ProductListController implements Initializable {
                 Integer queryPalletSize = queryOutput.getInt("PalletSize");
 
                 //~~~Populating the observable list~~~
-                ProductListPopulatorObservableList.add(new ProductListPopulator(queryProductID, queryProductDescription, queryWarehouses,
-                        queryPurchasedPrice, querySellPrice, queryWholesalePrice, queryTotalStock,
-                        queryTotalPallets, queryOutOfPallet, queryPalletSize));
+                Map<String, Integer> warehouseStockMap = loadWarehouseStockForProduct(connection, queryProductID);
+
+                ProductListPopulatorObservableList.add(
+                        new ProductListPopulator(
+                                queryProductID,
+                                queryProductDescription,
+                                queryWarehouses,
+                                queryPurchasedPrice,
+                                querySellPrice,
+                                queryWholesalePrice,
+                                queryTotalStock,
+                                queryTotalPallets,
+                                queryOutOfPallet,
+                                queryPalletSize,
+                                warehouseStockMap
+                        )
+                );
             }
 
             //~~~PropertyValueFactory corresponds to the new ProducListPopulator fields~~~
@@ -271,6 +285,19 @@ public class ProductListController implements Initializable {
         String warehouseFilter = SearchWarehouse.getText().trim();
 
         filteredData.setPredicate(product -> {
+            product.resetDisplayedStockToOriginal();
+
+            String matchedWarehouse = null;
+
+            if (!warehouseFilter.isBlank()) {
+                matchedWarehouse = findMatchingWarehouse(product, warehouseFilter);
+
+                if (matchedWarehouse == null) {
+                    return false;
+                }
+
+                product.applyWarehouseView(matchedWarehouse);
+            }
 
             if (!descriptionFilter.isBlank()) {
                 String description = product.getProductDescription();
@@ -323,32 +350,11 @@ public class ProductListController implements Initializable {
                 }
             }
 
-            if (!warehouseFilter.isBlank()) {
-                String warehouses = product.getWarehouses();
-                if (warehouses == null || warehouses.isBlank()) {
-                    return false;
-                }
-
-                boolean exactWarehouseMatch = false;
-                String[] warehouseParts = warehouses.split(",");
-
-                for (String part : warehouseParts) {
-                    if (part.trim().equalsIgnoreCase(warehouseFilter)) {
-                        exactWarehouseMatch = true;
-                        break;
-                    }
-                }
-
-                if (!exactWarehouseMatch) {
-                    return false;
-                }
-            }
-
             return true;
         });
+
+        ProductTableView.refresh();
     }
-
-
 
     //~~~~ DELETE HANDLER ~~~~~                                                                                        .
     private void confirmAndDelete(ProductListPopulator product) {
@@ -620,8 +626,19 @@ public class ProductListController implements Initializable {
                     .orElse(null);
 
             ProductListPopulatorObservableList.add(
-                    new ProductListPopulator(newId, description, warehousesStr, purchase, sell, wholesale,
-                            totalStock, totalPallets, outOfPallet, palletSize)
+                    new ProductListPopulator(
+                            newId,
+                            description,
+                            warehousesStr,
+                            purchase,
+                            sell,
+                            wholesale,
+                            totalStock,
+                            totalPallets,
+                            outOfPallet,
+                            palletSize,
+                            warehouseStock
+                    )
             );
 
             new Alert(Alert.AlertType.INFORMATION, "Το προϊόν καταχωρήθηκε με ID: " + newId).showAndWait();
@@ -680,6 +697,21 @@ public class ProductListController implements Initializable {
         return Pattern.compile(regex, Pattern.UNICODE_CASE)
                 .matcher(sourceValue)
                 .matches();
+    }
+
+    private String findMatchingWarehouse(ProductListPopulator product, String warehouseFilter) {
+        if (warehouseFilter == null || warehouseFilter.isBlank()) return null;
+
+        Map<String, Integer> warehouseStock = product.getWarehouseStock();
+        if (warehouseStock == null || warehouseStock.isEmpty()) return null;
+
+        for (String warehouseName : warehouseStock.keySet()) {
+            if (matchesWildcard(warehouseName, warehouseFilter, true)) {
+                return warehouseName;
+            }
+        }
+
+        return null;
     }
 
     private HBox createWarehouseStockRow(List<String> warehouses, VBox container) {
@@ -960,6 +992,8 @@ public class ProductListController implements Initializable {
             selected.setTotalPallets(totalPallets);
             selected.setOutOfPallet(outOfPallet);
             selected.setPalletSize(palletSize);
+            selected.setOriginalTotals(totalStock, totalPallets, outOfPallet);
+            selected.setWarehouseStock(warehouseStock);
 
             ProductTableView.refresh();
 

@@ -1,21 +1,17 @@
 package com.thesisv2;
 
 import javafx.beans.property.ReadOnlyObjectWrapper;
-import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.print.PrinterJob;
-import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.TextFieldTableCell;
-import javafx.scene.layout.GridPane;
 import javafx.scene.control.SplitPane;
-import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.scene.control.Button;
 import javafx.util.converter.IntegerStringConverter;
+import java.util.stream.Collectors;
 
 import java.io.File;
 import java.math.BigDecimal;
@@ -25,6 +21,11 @@ import java.sql.*;
 import java.time.LocalDate;
 import java.util.Optional;
 import java.util.ResourceBundle;
+
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.printing.PDFPageable;
+import java.awt.print.PrinterJob;
+import java.nio.file.Files;
 
 public class CreateInvoiceController implements Initializable {
 
@@ -771,7 +772,6 @@ public class CreateInvoiceController implements Initializable {
 
     @FXML
     private void handleSavePdf(javafx.event.ActionEvent event) {
-        if (readOnlyMode) return;
         if (!validateBeforeExport()) {
             return;
         }
@@ -832,151 +832,92 @@ public class CreateInvoiceController implements Initializable {
             return;
         }
 
-        PrinterJob job = PrinterJob.createPrinterJob();
-        if (job == null) {
-            showError("Εκτύπωση", "Δεν ήταν δυνατή η δημιουργία εργασίας εκτύπωσης.");
-            return;
+        File tempPdf = null;
+
+        try {
+            tempPdf = File.createTempFile(
+                    "invoice_" + (InvoiceIdField.getText().isBlank() ? "000000" : InvoiceIdField.getText()) + "_",
+                    ".pdf"
+            );
+
+            PdfInvoiceService pdfService = new PdfInvoiceService();
+            pdfService.exportInvoiceToPdf(
+                    tempPdf,
+                    InvoiceIdField.getText().isBlank() ? "000000" : InvoiceIdField.getText(),
+                    InvoiceTypeCombo.getValue(),
+                    InvoiceStatusCombo.getValue(),
+                    IssueDatePicker.getValue(),
+                    DueDatePicker.getValue(),
+                    CurrencyCombo.getValue(),
+                    WarehouseCombo.getValue(),
+
+                    SellerNameField.getText(),
+                    SellerAddressField.getText(),
+                    SellerCityField.getText(),
+                    SellerPostalCodeField.getText(),
+                    SellerCountryField.getText(),
+                    SellerTaxIdField.getText(),
+                    SellerEmailField.getText(),
+                    SellerPhoneField.getText(),
+
+                    CustomerNameField.getText(),
+                    CustomerAddressField.getText(),
+                    CustomerCityField.getText(),
+                    CustomerPostalCodeField.getText(),
+                    CustomerCountryField.getText(),
+                    CustomerTaxIdField.getText(),
+                    CustomerEmailField.getText(),
+                    CustomerPhoneField.getText(),
+
+                    getRealInvoiceLines(),
+                    SubtotalField.getText(),
+                    OverallDiscountPercentField.getText(),
+                    DiscountTotalField.getText(),
+                    TaxTotalField.getText(),
+                    GrandTotalField.getText(),
+                    NotesArea.getText(),
+                    PaymentTermsArea.getText()
+            );
+
+            printPdfFile(tempPdf);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            showError("Σφάλμα εκτύπωσης", e.getMessage());
+        } finally {
+            if (tempPdf != null) {
+                try {
+                    Files.deleteIfExists(tempPdf.toPath());
+                } catch (Exception ignored) {
+                }
+            }
+        }
+    }
+
+    private void printPdfFile(File pdfFile) throws Exception {
+        if (pdfFile == null || !pdfFile.exists()) {
+            throw new Exception("Το προσωρινό PDF δεν βρέθηκε.");
         }
 
-        boolean proceed = job.showPrintDialog(InvoiceLinesTable.getScene().getWindow());
-        if (!proceed) {
-            return;
-        }
+        PrinterJob job = PrinterJob.getPrinterJob();
 
-        Node printableNode = createPrintableNode();
+        try (PDDocument document = PDDocument.load(pdfFile)) {
+            job.setPageable(new PDFPageable(document));
 
-        boolean printed = job.printPage(printableNode);
-        if (printed) {
-            job.endJob();
-            showInfo("Εκτύπωση", "Η εκτύπωση στάλθηκε στον εκτυπωτή.");
-        } else {
-            showError("Εκτύπωση", "Η εκτύπωση απέτυχε.");
+            boolean accepted = job.printDialog();
+            if (!accepted) {
+                return;
+            }
+
+            job.print();
         }
     }
 
-    private Node createPrintableNode() {
-        VBox root = new VBox(12);
-        root.setStyle("-fx-background-color: white; -fx-padding: 24;");
-
-        Label title = new Label("ΠΑΡΑΣΤΑΤΙΚΟ " + InvoiceTypeCombo.getValue());
-        title.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
-
-        GridPane topGrid = new GridPane();
-        topGrid.setHgap(24);
-        topGrid.setVgap(6);
-
-        VBox sellerBox = new VBox(4);
-        sellerBox.getChildren().addAll(
-                sectionLabel("Εκδότης"),
-                valueLabel(SellerNameField.getText()),
-                valueLabel(SellerAddressField.getText()),
-                valueLabel(SellerCityField.getText() + " " + SellerPostalCodeField.getText()),
-                valueLabel(SellerCountryField.getText()),
-                valueLabel("ΑΦΜ: " + SellerTaxIdField.getText()),
-                valueLabel("Τηλ: " + SellerPhoneField.getText()),
-                valueLabel("Email: " + SellerEmailField.getText())
-        );
-
-        VBox buyerBox = new VBox(4);
-        buyerBox.getChildren().addAll(
-                sectionLabel("Πελάτης"),
-                valueLabel(CustomerNameField.getText()),
-                valueLabel(CustomerAddressField.getText()),
-                valueLabel(CustomerCityField.getText() + " " + CustomerPostalCodeField.getText()),
-                valueLabel(CustomerCountryField.getText()),
-                valueLabel("ΑΦΜ: " + CustomerTaxIdField.getText()),
-                valueLabel("Τηλ: " + CustomerPhoneField.getText()),
-                valueLabel("Email: " + CustomerEmailField.getText())
-        );
-
-        VBox infoBox = new VBox(4);
-        infoBox.getChildren().addAll(
-                sectionLabel("Στοιχεία Παραστατικού"),
-                valueLabel("Αριθμός: " + (InvoiceIdField.getText().isBlank() ? "000000" : InvoiceIdField.getText())),
-                valueLabel("Ημερομηνία: " + IssueDatePicker.getValue()),
-                valueLabel("Λήξη: " + DueDatePicker.getValue()),
-                valueLabel("Αποθήκη: " + WarehouseCombo.getValue()),
-                valueLabel("Νόμισμα: " + CurrencyCombo.getValue()),
-                valueLabel("Κατάσταση: " + InvoiceStatusCombo.getValue())
-        );
-
-        topGrid.add(sellerBox, 0, 0);
-        topGrid.add(buyerBox, 1, 0);
-        topGrid.add(infoBox, 2, 0);
-
-        GridPane linesGrid = new GridPane();
-        linesGrid.setHgap(12);
-        linesGrid.setVgap(6);
-
-        Label h1 = headerLabel("Α/Α");
-        Label h2 = headerLabel("Περιγραφή");
-        Label h3 = headerLabel("Ποσ.");
-        Label h4 = headerLabel("Τιμή");
-        Label h5 = headerLabel("Σύνολο");
-
-        linesGrid.add(h1, 0, 0);
-        linesGrid.add(h2, 1, 0);
-        linesGrid.add(h3, 2, 0);
-        linesGrid.add(h4, 3, 0);
-        linesGrid.add(h5, 4, 0);
-
-        int row = 1;
-        for (InvoiceLineModel line : invoiceLines) {
-            if (isLineEmpty(line)) continue;
-
-            linesGrid.add(valueLabel(String.valueOf(line.getLineNo())), 0, row);
-            linesGrid.add(valueLabel(line.getDescription()), 1, row);
-            linesGrid.add(valueLabel(formatNumber(line.getQuantity())), 2, row);
-            linesGrid.add(valueLabel(formatMoney(line.getUnitPrice())), 3, row);
-            linesGrid.add(valueLabel(formatMoney(line.getLineTotal())), 4, row);
-            row++;
-        }
-
-        VBox totalsBox = new VBox(4);
-        totalsBox.setStyle("-fx-alignment: center-right;");
-        totalsBox.getChildren().addAll(
-                valueLabel("Υποσύνολο: " + SubtotalField.getText() + " " + CurrencyCombo.getValue()),
-                valueLabel("Έκπτωση %: " + OverallDiscountPercentField.getText()),
-                valueLabel("Σύνολο έκπτωσης: " + DiscountTotalField.getText() + " " + CurrencyCombo.getValue()),
-                valueLabel("Σύνολο φόρου: " + TaxTotalField.getText() + " " + CurrencyCombo.getValue()),
-                boldValueLabel("Γενικό σύνολο: " + GrandTotalField.getText() + " " + CurrencyCombo.getValue())
-        );
-
-        root.getChildren().addAll(
-                title,
-                new Separator(),
-                topGrid,
-                new Separator(),
-                linesGrid,
-                new Separator(),
-                totalsBox
-        );
-
-        return root;
-    }
-
-    private Label sectionLabel(String text) {
-        Label label = new Label(text);
-        label.setStyle("-fx-font-size: 13px; -fx-font-weight: bold;");
-        return label;
-    }
-
-    private Label headerLabel(String text) {
-        Label label = new Label(text);
-        label.setStyle("-fx-font-size: 12px; -fx-font-weight: bold;");
-        return label;
-    }
-
-    private Label valueLabel(String text) {
-        Label label = new Label(text == null ? "" : text);
-        label.setStyle("-fx-font-size: 11px;");
-        return label;
-    }
-
-    private Label boldValueLabel(String text) {
-        Label label = new Label(text == null ? "" : text);
-        label.setStyle("-fx-font-size: 12px; -fx-font-weight: bold;");
-        return label;
+    private ObservableList<InvoiceLineModel> getRealInvoiceLines() {
+        return invoiceLines.stream()
+                .filter(line -> line != null)
+                .filter(line -> !isLineEmpty(line))
+                .collect(Collectors.toCollection(FXCollections::observableArrayList));
     }
 
     private boolean validateBeforeSave() {
@@ -1306,14 +1247,30 @@ public class CreateInvoiceController implements Initializable {
     }
 
     private void setFixedSellerDetails() {
-        SellerNameField.setText("SARLANIS S.A.");
-        SellerAddressField.setText("My house");
-        SellerCityField.setText("Chalkida");
-        SellerPostalCodeField.setText("34132");
-        SellerCountryField.setText("Greece");
-        SellerTaxIdField.setText("6912345678");
-        SellerEmailField.setText("info@sarlanisSA.gr");
-        SellerPhoneField.setText("2221012345");
+
+        String sql = "SELECT * FROM company_info WHERE id = 1";
+
+        try {
+            DBConnection connect = new DBConnection();
+            Connection connection = connect.getConnection();
+            PreparedStatement stmt = connection.prepareStatement(sql);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                SellerNameField.setText(rs.getString("seller_name"));
+                SellerAddressField.setText(rs.getString("seller_address"));
+                SellerCityField.setText(rs.getString("seller_city"));
+                SellerPostalCodeField.setText(rs.getString("seller_postal_code"));
+                SellerCountryField.setText(rs.getString("seller_country"));
+                SellerTaxIdField.setText(rs.getString("seller_tax_id"));
+                SellerEmailField.setText(rs.getString("seller_email"));
+                SellerPhoneField.setText(rs.getString("seller_phone"));
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            showError("Σφάλμα", "Δεν ήταν δυνατή η φόρτωση στοιχείων εταιρείας.");
+        }
     }
 
     private static class ProductLookupResult {

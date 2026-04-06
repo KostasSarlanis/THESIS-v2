@@ -15,6 +15,8 @@ module com.example.thesisv2 {
     requires javafx.base;
     requires javafx.graphics;
     requires com.github.librepdf.openpdf;
+    requires java.desktop;
+    requires org.apache.pdfbox;
 
     opens com.thesisv2 to javafx.fxml;
     exports com.thesisv2;
