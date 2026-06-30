@@ -127,6 +127,10 @@
                     <padding>
                         <Insets left="10.0" right="10.0" top="10.0" />
                     </padding>
+                    <Button text="Ανανέωση" onAction="#HandleRefresh" />
+                    <padding>
+                        <Insets left="10.0" right="10.0" top="10.0" />
+                    </padding>
                 </HBox>
 
                 <TableView fx:id="ProductTableView" VBox.vgrow="ALWAYS">

@@ -59,38 +59,23 @@
       </HBox>
    </bottom>
    <center>
-       <TabPane tabClosingPolicy="UNAVAILABLE">
+       <TabPane fx:id="MainTabPane" tabClosingPolicy="UNAVAILABLE">
            <tabs>
                <Tab text="Λίστα ειδών">
                    <content>
                        <fx:include source="product-list-view.fxml"/>
                    </content>
                </Tab>
-               <Tab text="Λίστα αποθηκών">
-                   <content>
-                       <fx:include source="Warehouse-list-view.fxml"/>
-                   </content>
-               </Tab>
-               <Tab text="Έκδοση παραστατικού">
-                   <content>
-                       <fx:include source="create-invoice-view.fxml"/>
-                   </content>
-               </Tab>
-               <Tab text="Ενδοδιακίνηση">
-                   <content>
-                       <fx:include source="inner-movement-view.fxml"/>
-                   </content>
-               </Tab>
-               <Tab text="Λίστα κινήσεων">
-                   <content>
-                       <fx:include source="movment-list-view.fxml"/>
-                   </content>
-               </Tab>
-               <Tab text="Λίστα παραστατικών">
-                   <content>
-                       <fx:include source="invoice-list-view.fxml"/>
-                   </content>
-               </Tab>
+
+               <Tab fx:id="WarehousesTab" text="Λίστα αποθηκών" />
+
+               <Tab fx:id="CreateInvoiceTab" text="Έκδοση παραστατικού" />
+
+               <Tab fx:id="MovementTab" text="Ενδοδιακίνηση" />
+
+               <Tab fx:id="MovementListTab" text="Λίστα κινήσεων" />
+
+               <Tab fx:id="InvoiceListTab" text="Λίστα παραστατικών" />
            </tabs>
        </TabPane>
    </center>

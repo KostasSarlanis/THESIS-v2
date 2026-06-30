@@ -7,6 +7,9 @@ import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import java.net.URL;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -14,6 +17,61 @@ import java.sql.ResultSet;
 import java.util.Optional;
 
 public class Controller {
+    //~~~~~~ MAKE IT FASTER ~~~~~
+    @FXML private  TabPane MainTabPane;
+    @FXML private Tab WarehousesTab;
+    @FXML private Tab CreateInvoiceTab;
+    @FXML private Tab MovementTab;
+    @FXML private Tab MovementListTab;
+    @FXML private Tab InvoiceListTab;
+
+    @FXML
+    private void initialize() {
+        MainTabPane.getSelectionModel().selectedItemProperty().addListener((obs, oldTab, newTab) -> {
+
+            if (newTab == WarehousesTab) {
+                loadTabOnce(WarehousesTab, "Warehouse-list-view.fxml");
+            }
+
+            else if (newTab == CreateInvoiceTab) {
+                loadTabOnce(CreateInvoiceTab, "create-invoice-view.fxml");
+            }
+
+            else if (newTab == MovementTab) {
+                loadTabOnce(MovementTab, "inner-movement-view.fxml");
+            }
+
+            else if (newTab == MovementListTab) {
+                loadTabOnce(MovementListTab, "movment-list-view.fxml");
+            }
+
+            else if (newTab == InvoiceListTab) {
+                loadTabOnce(InvoiceListTab, "invoice-list-view.fxml");
+            }
+        });
+    }
+
+    private void loadTabOnce(Tab tab, String fxmlFile) {
+        if (tab.getContent() != null) {
+            return;
+        }
+
+        try {
+            URL resource = getClass().getResource(fxmlFile);
+
+            if (resource == null) {
+                tab.setContent(new Label("Δεν βρέθηκε το αρχείο: " + fxmlFile));
+                return;
+            }
+
+            Parent content = FXMLLoader.load(resource);
+            tab.setContent(content);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            tab.setContent(new Label("Σφάλμα φόρτωσης: " + fxmlFile));
+        }
+    }
 
     //~~~~~ CLOSE HANDLER ~~~~~
     @FXML

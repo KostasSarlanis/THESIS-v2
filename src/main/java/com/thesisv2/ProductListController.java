@@ -142,75 +142,6 @@ public class ProductListController implements Initializable {
             if (newVal.doubleValue() != 0.12) divider.setPosition(0.12);
         });
 
-        //connecting to database
-        DBConnection connect = new DBConnection();
-        Connection connection = connect.getConnection();
-
-        //~~~setting up a var. with the query~~~
-        String productViewQuery = "SELECT\n" +
-                "    p.ProductID,\n" +
-                "    p.ProductDescription,\n" +
-                "    (\n" +
-                "       SELECT GROUP_CONCAT(DISTINCT WAREHOUSE ORDER BY WAREHOUSE)\n" +
-                "       FROM prod_warehouse_link l\n" +
-                "       WHERE l.PRODUCT = p.ProductID && l.STOCK > 0\n" +
-                "    ) AS Warehouses,\n" +
-                "    p.PurchasedPrice,\n" +
-                "    p.SellPrice,\n" +
-                "    p.WholesalePrice,\n" +
-                "    COALESCE(t.TotalStock, 0) AS TotalStock,\n" +
-                "    COALESCE(t.TotalPallets, 0) AS TotalPallets,\n" +
-                "    COALESCE(t.OutOfPallet, 0) AS OutOfPallet,\n" +
-                "    p.PalletSize\n" +
-                "FROM products p\n" +
-                "\n" +
-                "LEFT JOIN (\n" +
-                "    SELECT\n" +
-                "        PRODUCT,\n" +
-                "        SUM(STOCK) AS TotalStock,\n" +
-                "        SUM(FLOOR(STOCK / (SELECT PalletSize FROM products WHERE ProductID = PRODUCT))) AS TotalPallets,\n" +
-                "        SUM(STOCK % (SELECT PalletSize FROM products WHERE ProductID = PRODUCT)) AS OutOfPallet\n" +
-                "    FROM prod_warehouse_link\n" +
-                "    GROUP BY PRODUCT\n" +
-                ") t ON t.PRODUCT = p.ProductID;";
-
-
-        try {
-            Statement statment = connect.connection.createStatement();
-            ResultSet queryOutput = statment.executeQuery(productViewQuery);
-
-            //~~~reads every line from the DB~~~
-            while (queryOutput.next()) {
-                Integer queryProductID = queryOutput.getInt("ProductID");
-                String queryProductDescription = queryOutput.getString("ProductDescription");
-                String queryWarehouses = queryOutput.getString("Warehouses");
-                Float queryPurchasedPrice = queryOutput.getFloat("PurchasedPrice");
-                Float querySellPrice = queryOutput.getFloat("SellPrice");
-                Float queryWholesalePrice = queryOutput.getFloat("WholesalePrice");
-                Integer queryTotalStock = queryOutput.getInt("TotalStock");
-                Integer queryTotalPallets = queryOutput.getInt("TotalPallets");
-                Integer queryOutOfPallet = queryOutput.getInt("OutOfPallet");
-                Integer queryPalletSize = queryOutput.getInt("PalletSize");
-
-                //~~~Populating the observable list~~~
-                Map<String, Integer> warehouseStockMap = loadWarehouseStockForProduct(connection, queryProductID);
-
-                ProductListPopulatorObservableList.add(
-                        new ProductListPopulator(
-                                queryProductID,
-                                queryProductDescription,
-                                queryWarehouses,
-                                queryPurchasedPrice,
-                                querySellPrice,
-                                queryWholesalePrice,
-                                queryTotalStock,
-                                queryTotalPallets,
-                                queryOutOfPallet,
-                                queryPalletSize,
-                                warehouseStockMap
-                        )
-                );
-            }
 
             //~~~PropertyValueFactory corresponds to the new ProducListPopulator fields~~~
             ColumnProductID.setCellValueFactory(new PropertyValueFactory<>("ProductID"));
@@ -247,14 +178,9 @@ public class ProductListController implements Initializable {
                     javafx.beans.binding.Bindings.size(sortedData).asString("Αποτελέσματα: %d")
             );
 
+            loadProductData();
 
-        } catch (SQLException e) {
-            System.out.println("Error in getting data and setting the table.");
-            Logger.getLogger(ProductListPopulator.class.getName()).log(Level.SEVERE, null, e);
-            e.printStackTrace();
         }
-
-    }
 
     //          ~~~~~ REMOVES GREEK TONES FROM TEXT ~~~~~                                                                  .
     private String removeGreekTones(String text) {
@@ -430,6 +356,89 @@ public class ProductListController implements Initializable {
         }
 
         confirmAndDelete(selected);
+    }
+
+    @FXML
+    private void HandleRefresh(ActionEvent event) {
+        ProductListPopulatorObservableList.clear();
+        loadProductData();
+        ProductTableView.refresh();
+    }
+
+    private void loadProductData() {
+        ProductListPopulatorObservableList.clear();
+
+        DBConnection connect = new DBConnection();
+        Connection connection = connect.getConnection();
+
+        String productViewQuery = "SELECT\n" +
+                "    p.ProductID,\n" +
+                "    p.ProductDescription,\n" +
+                "    (\n" +
+                "       SELECT GROUP_CONCAT(DISTINCT WAREHOUSE ORDER BY WAREHOUSE)\n" +
+                "       FROM prod_warehouse_link l\n" +
+                "       WHERE l.PRODUCT = p.ProductID && l.STOCK > 0\n" +
+                "    ) AS Warehouses,\n" +
+                "    p.PurchasedPrice,\n" +
+                "    p.SellPrice,\n" +
+                "    p.WholesalePrice,\n" +
+                "    COALESCE(t.TotalStock, 0) AS TotalStock,\n" +
+                "    COALESCE(t.TotalPallets, 0) AS TotalPallets,\n" +
+                "    COALESCE(t.OutOfPallet, 0) AS OutOfPallet,\n" +
+                "    p.PalletSize\n" +
+                "FROM products p\n" +
+                "LEFT JOIN (\n" +
+                "    SELECT\n" +
+                "        PRODUCT,\n" +
+                "        SUM(STOCK) AS TotalStock,\n" +
+                "        SUM(FLOOR(STOCK / (SELECT PalletSize FROM products WHERE ProductID = PRODUCT))) AS TotalPallets,\n" +
+                "        SUM(STOCK % (SELECT PalletSize FROM products WHERE ProductID = PRODUCT)) AS OutOfPallet\n" +
+                "    FROM prod_warehouse_link\n" +
+                "    GROUP BY PRODUCT\n" +
+                ") t ON t.PRODUCT = p.ProductID;";
+
+        try {
+            Statement statment = connection.createStatement();
+            ResultSet queryOutput = statment.executeQuery(productViewQuery);
+
+            Map<Integer, Map<String, Integer>> allWarehouseStock = loadAllWarehouseStock(connection);
+
+            while (queryOutput.next()) {
+                Integer queryProductID = queryOutput.getInt("ProductID");
+                String queryProductDescription = queryOutput.getString("ProductDescription");
+                String queryWarehouses = queryOutput.getString("Warehouses");
+                Float queryPurchasedPrice = queryOutput.getFloat("PurchasedPrice");
+                Float querySellPrice = queryOutput.getFloat("SellPrice");
+                Float queryWholesalePrice = queryOutput.getFloat("WholesalePrice");
+                Integer queryTotalStock = queryOutput.getInt("TotalStock");
+                Integer queryTotalPallets = queryOutput.getInt("TotalPallets");
+                Integer queryOutOfPallet = queryOutput.getInt("OutOfPallet");
+                Integer queryPalletSize = queryOutput.getInt("PalletSize");
+
+                Map<String, Integer> warehouseStockMap =
+                        allWarehouseStock.getOrDefault(queryProductID, new LinkedHashMap<>());
+
+                ProductListPopulatorObservableList.add(
+                        new ProductListPopulator(
+                                queryProductID,
+                                queryProductDescription,
+                                queryWarehouses,
+                                queryPurchasedPrice,
+                                querySellPrice,
+                                queryWholesalePrice,
+                                queryTotalStock,
+                                queryTotalPallets,
+                                queryOutOfPallet,
+                                queryPalletSize,
+                                warehouseStockMap
+                        )
+                );
+            }
+
+        } catch (SQLException e) {
+            System.out.println("Error refreshing product data.");
+            e.printStackTrace();
+        }
     }
 
     //~~~~~ NEW HANDLER ~~~~~                                                                                          .
@@ -1034,6 +1043,27 @@ public class ProductListController implements Initializable {
                     int stock = rs.getInt("STOCK");
                     result.put(warehouse, stock);
                 }
+            }
+        }
+
+        return result;
+    }
+
+    private Map<Integer, Map<String, Integer>> loadAllWarehouseStock(Connection connection) throws SQLException {
+        String sql = "SELECT PRODUCT, WAREHOUSE, STOCK FROM prod_warehouse_link ORDER BY PRODUCT, WAREHOUSE";
+        Map<Integer, Map<String, Integer>> result = new HashMap<>();
+
+        try (PreparedStatement ps = connection.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                int productId = rs.getInt("PRODUCT");
+                String warehouse = rs.getString("WAREHOUSE");
+                int stock = rs.getInt("STOCK");
+
+                result
+                        .computeIfAbsent(productId, k -> new LinkedHashMap<>())
+                        .put(warehouse, stock);
             }
         }
 

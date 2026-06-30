@@ -1,4 +1,4 @@
-module com.example.thesisv2 {
+module com.thesisv2 {
     requires javafx.controls;
     requires javafx.fxml;
     requires javafx.web;
@@ -18,6 +18,6 @@ module com.example.thesisv2 {
     requires java.desktop;
     requires org.apache.pdfbox;
 
-    opens com.thesisv2 to javafx.fxml;
+    opens com.thesisv2 to javafx.fxml, javafx.graphics;
     exports com.thesisv2;
 }
